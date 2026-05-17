@@ -1,0 +1,14 @@
+; @(#)db.bind v1.2 25 JAN 2001 Rob Thomas noc@cymru.com
+;
+$TTL    1D
+$ORIGIN bind.
+@       1D      CHAOS   SOA     localhost. root.localhost. (
+                2001013101      ; serial
+                3H              ; refresh
+                1H              ; retry
+                1W              ; expiry
+                1D )            ; minimum
+        CHAOS NS        localhost.
+
+version.bind.   CHAOS  TXT "BIND 9.4.3-P1+robhacks"
+authors.bind.   CHAOS  TXT "are better coders than I. :)"

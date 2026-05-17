@@ -1,0 +1,6 @@
+[build]
+rustc-wrapper = "/usr/local/bin/sccache"
+rustflags = '-C target-cpu=native'
+
+[unstable]
+gc = true

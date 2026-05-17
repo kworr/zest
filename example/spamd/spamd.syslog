@@ -1,0 +1,2 @@
+!spamd
+*.* /var/log/spamd

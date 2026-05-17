@@ -1,0 +1,57 @@
+compatibility_level = 3.11
+
+address_verify_map = cdb:$data_directory/verify_cache
+alias_database = cdb:/usr/local/etc/postfix/aliases
+alias_maps = cdb:/usr/local/etc/postfix/aliases
+default_database_type = cdb
+default_destination_concurrency_limit = 1
+header_checks = pcre:/usr/local/etc/postfix/header_checks
+local_recipient_maps =
+maps_rbl_reject_code = 450
+masquerade_domains = $mydomain
+milter_default_action = accept
+mydestination =
+myorigin = $mydomain
+notify_classes =
+	bounce
+	resource
+	software
+smtp_sasl_security_options =
+smtp_tls_security_level = may
+smtpd_client_restrictions =
+	permit_sasl_authenticated
+	reject_unknown_client_hostname
+smtpd_data_restrictions =
+	sleep 1
+	warn_if_reject reject_unauth_pipelining
+smtpd_helo_required = yes
+smtpd_helo_restrictions =
+	permit_sasl_authenticated
+	reject_invalid_helo_hostname
+	reject_non_fqdn_helo_hostname
+	reject_unknown_helo_hostname
+smtpd_recipient_restrictions =
+	permit_sasl_authenticated
+	reject_non_fqdn_recipient
+	reject_unknown_recipient_domain
+	defer_unauth_destination
+	reject_unverified_recipient
+smtpd_relay_restrictions =
+	permit_mynetworks
+	permit_sasl_authenticated
+	defer_unauth_destination
+smtpd_sender_restrictions =
+	permit_sasl_authenticated
+	reject_unknown_sender_domain
+	reject_rbl_client zen.spamhaus.org
+	reject_rbl_client bl.spamcop.net
+	reject_rbl_client psbl.surriel.com
+	reject_rbl_client virbl.dnsbl.bit.nl
+	reject_unknown_client_hostname
+	#reject_spf_invalid_sender
+	reject_unverified_sender
+smtpd_tls_auth_only = yes
+smtpd_tls_security_level = may
+smtputf8_enable = no
+parent_domain_matches_subdomains = debug_peer_list,fast_flush_domains,mynetworks,permit_mx_backup_networks,qmqpd_authorized_clients,relay_domains
+inet_protocols = ipv4

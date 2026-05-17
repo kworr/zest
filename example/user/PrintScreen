@@ -1,0 +1,7 @@
+#!/bin/sh -
+
+umask 077 &&
+
+cd /tmp &&
+
+/usr/local/bin/emprint --region --app '/home/arcade/bin/xcmenu -bi image/png < %s'

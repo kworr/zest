@@ -1,0 +1,2 @@
+@cert-authority * ssh-ed25519 AUTH1 domain1
+@cert-authority * ssh-ed25519 AUTH2 domain2

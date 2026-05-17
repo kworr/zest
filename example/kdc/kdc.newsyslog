@@ -1,0 +1,2 @@
+/var/heimdal/kdc.log 644 7 10240 * -
+/var/log/kdc 644 7 10240 * -

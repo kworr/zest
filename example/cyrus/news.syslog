@@ -1,0 +1,4 @@
+#!*
+news.*	/var/log/news
+#!master
+*.*	/var/log/news

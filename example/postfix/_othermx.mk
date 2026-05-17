@@ -1,0 +1,1 @@
+POSTFIX_CONFIGS+=	transport virtual_custom virtual_domains

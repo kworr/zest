@@ -1,0 +1,28 @@
+# RFC violations
+/[^[:print:]]{7}/ REJECT RFC2047 violated
+/^.*=20[a-z]*=20[a-z]*=20[a-z]*=20[a-z]*/ REJECT RFC822 violated
+/(.*)?\{6,\}/ REJECT RFC822 violated
+/(.*)[X|x]\{3,\}/ REJECT RFC822 violated
+
+# Unreadable/Unprintable
+/^Subject:.*=\?(GB2312|big5|euc-kr|ks_c_5601-1987)\?/ REJECT Unreadable text in subject line
+/^Content-Type:.*charset="?(GB2312|big5|euc-kr|ks_c_5601-1987|iso-2022-jp)/ REJECT Unreadable text content
+
+# Subject checks
+/^Subject:.*      / REJECT Too much spaces
+/^Subject:.*r[ _\.\*\-]+o[ _\.\*\-]+l[ _\.\*\-]+e[ _\.\*\-]+x/ REJECT Hidden Words
+/^Subject:.*p[ _\.\*\-]+o[ _\.\*\-]+r[ _\.\*\-]+n/ REJECT Hidden Words
+
+# Backscatter mail from virus scanners
+/^Subject:.*Anti-Virus Notification/ REJECT Virus Notification
+/^Subject:.*due to virus/ REJECT Virus Notification
+/^Subject:.*email contains VIRUS/ REJECT Virus Notification
+/^Subject:.*InterScanMSS/ REJECT Virus Notification
+/^Subject:.*ScanMail for Lotus/ REJECT Virus Notification
+/^Subject:.*Symantec AntiVirus/ REJECT Virus Notification
+/^Subject:.*Virus Detected by Network Associates/ REJECT Virus Notification
+/^subject:.*virus found/ REJECT Virus Notification
+/^subject:.*Virus Infection Alert/ REJECT Virus Notification
+
+# Forwarded by yahoo.co.uk
+/^To:.*@yahoo\.co\.uk>.*/ REJECT no yahoo.co.uk recipients here

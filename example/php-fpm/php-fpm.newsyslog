@@ -1,0 +1,2 @@
+/var/log/php-fpm.log www:wheel 644 7 1024 * - /var/run/php-fpm.pid 30
+/var/log/php-fpm/*.log www:wheel 644 7 1024 * G /var/run/php-fpm.pid 30

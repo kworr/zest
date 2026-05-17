@@ -1,0 +1,1 @@
+/var/log/sphinxsearch/*.log _sphinx:_sphinx 640 7 1024 * G /var/run/sphinxsearch/searchd.pid 30

@@ -1,0 +1,26 @@
+#!/bin/sh -e
+# vi:set ft=sh:
+
+PORTS=`pkg query -e '%?r=0' %o`
+
+DEPS_LIST=`mktemp`
+DEPS_LIST_U=`mktemp`
+
+echo "# Building list of port deps."
+
+for PORT in ${PORTS}; do
+	make -C /usr/ports/${PORT} all-depends-list >> ${DEPS_LIST}
+	echo /usr/ports/${PORT} >> ${DEPS_LIST}
+done
+
+echo "# Sorting."
+
+sort -u < ${DEPS_LIST} > ${DEPS_LIST_U}
+
+echo "# Checking all ports for options changes."
+
+while read DEP; do
+	make -C ${DEP} config-conditional
+done < ${DEPS_LIST_U}
+
+rm ${DEPS_LIST} ${DEPS_LIST_U}

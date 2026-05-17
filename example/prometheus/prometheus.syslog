@@ -1,0 +1,2 @@
+!prometheus
+*.* /var/log/prometheus.log
