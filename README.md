@@ -1,4 +1,4 @@
-# It follows the UNIX philosophy with no templating engine, minimal dependencies, and straightforward configuration management.
+# Zest config management tool
 Zest is a simple config management tool written in BSD make. It follows the UNIX philosophy with no templating engine, minimal dependencies, and straightforward configuration management.
 
 ## Why Zest?
