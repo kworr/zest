@@ -91,7 +91,7 @@ MOD:= ${DIR}
 TARGETS+=	${DIR}
 .PHONY: ${DIR}
 .	else
-.		warning 'Module "${DIR}" not found under.'
+.		warning 'Module "${DIR}" not found.'
 .	endif
 .endfor
 
