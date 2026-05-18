@@ -1,0 +1,8 @@
+# obj directories for zest
+# they are required to keep track on service restarts, so service restart
+# can become optional and would happen only when some files were changed
+obj.*/
+*/obj.*/
+
+# docker compose local environment
+.env
