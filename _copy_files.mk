@@ -15,19 +15,19 @@
 
 .if empty(DEST)
 .	for FILE in ${FILES}
-.		if exists(${MOD}/${MYHOST}/${FILE:T})
-${FILE}: ${MOD}/${MYHOST}/${FILE:T} _text_file
+.		if exists(${.CURDIR}/${MOD}/${MYHOST}/${FILE:T})
+${FILE}: ${.CURDIR}/${MOD}/${MYHOST}/${FILE:T} _text_file
 .		else
-${FILE}: ${MOD}/${FILE:T} _text_file
+${FILE}: ${.CURDIR}/${MOD}/${FILE:T} _text_file
 .		endif
 .ORDER: ${FILE:H} ${FILE}
 .	endfor
 .else
 .	for FILE in ${FILES}
-.		if exists(${MOD}/${MYHOST}/${FILE})
-${DEST}/${FILE}: ${MOD}/${MYHOST}/${FILE} _text_file
+.		if exists(${.CURDIR}/${MOD}/${MYHOST}/${FILE})
+${DEST}/${FILE}: ${.CURDIR}/${MOD}/${MYHOST}/${FILE} _text_file
 .		else
-${DEST}/${FILE}: ${MOD}/${FILE} _text_file
+${DEST}/${FILE}: ${.CURDIR}/${MOD}/${FILE} _text_file
 .		endif
 .ORDER: ${DEST}/${FILE} ${DEST}
 .	endfor

@@ -1,5 +1,5 @@
 # define where Zest is located
-ZEST=	${.PARSEDIR}
+ZEST:=	${.PARSEDIR}
 
 # this for temporary files (and converting service restarts to tasks)
 MAKEOBJDIR:=	${.CURDIR}/obj.${.MAKE.UID}
@@ -13,10 +13,8 @@ ${LAST_UPDATE}!
 .SILENT:
 TARGETS:=
 
-.include "${ZEST}/_config.mk"
-.if exists(_config.mk)
-.	include "_config.mk"
-.endif
+.include "_config.mk"
+.sinclude "${.CURDIR}/_config.mk"
 
 .MAKE.JOBS?=1
 .if !empty(.MAKE.MODE:Mcompat)
@@ -49,14 +47,16 @@ TARGETS+=	${DIR}
 
 # The only default subdir. Everything else is added only for root and only
 # through other config files
+.ifdef .TARGETS
+SUBDIR:=	${.TARGETS}
+.else
 SUBDIR:=	user
+.endif
 
 # for `root` - add default modules and then include host config
 .if !empty(:!whoami!:Mroot)
-.	include "_default.mk"
-.	if exists(_${MYHOST}.mk)
-.		include "_${MYHOST}.mk"
-.	endif
+.	include "${.CURDIR}/_default.mk"
+.	sinclude "${.CURDIR}/_${MYHOST}.mk"
 .endif
 
 # import var defines, this is for crossdependencies, when some file is for other
@@ -80,13 +80,12 @@ ${${COMMAND:tu}_COMMAND}: _mark_command
 # now the part that actually defines dependencies based on collected
 # configuration
 .for DIR in ${SUBDIR}
-.	if exists(Mk/${DIR}.var.mk)
-MOD:= ${DIR}
-.		include "Mk/${DIR}.var.mk"
+MOD:=	${DIR}
+.	if exists(Mk/${DIR}.mk)
+.		include "Mk/${DIR}.mk"
 TARGETS+=	${DIR}
 .PHONY: ${DIR}
 .	elif exists(${ZEST}/${DIR}.mk)
-MOD:= ${DIR}
 .		include "${ZEST}/${DIR}.mk"
 TARGETS+=	${DIR}
 .PHONY: ${DIR}
