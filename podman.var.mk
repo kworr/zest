@@ -1,0 +1,1 @@
+COMMANDS+=	podman_service
