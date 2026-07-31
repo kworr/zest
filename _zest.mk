@@ -47,7 +47,7 @@ TARGETS+=	${DIR}
 
 # The only default subdir. Everything else is added only for root and only
 # through other config files
-.ifdef .TARGETS
+.if !empty(.TARGETS)
 SUBDIR:=	${.TARGETS}
 .else
 SUBDIR:=	user
