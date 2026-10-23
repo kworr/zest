@@ -34,4 +34,4 @@ jobs:
             make >/tmp/Makefile
             make -n -f /tmp/Makefile
             touch /tmp/_default.mk
-            make -n -C /tmp
+            cd /tmp && make -n
