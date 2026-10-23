@@ -1,9 +1,6 @@
 MYHOST!=	hostname -s
 
-NEWSYSLOG_DIR:=
 NEWSYSLOG_FILES:=
-
-SYSLOG_DIR:=
 SYSLOG_FILES:=
 
 INSTALL=	install -C
@@ -15,6 +12,8 @@ USER!=	whoami
 
 .if ${OS} == "Linux"
 .MAKE.JOBS!=	nproc
+NEWSYSLOG_DIR:=
+SYSLOG_DIR:=
 .elif ${OS} == "FreeBSD"
 .MAKE.JOBS!=	sysctl -n hw.ncpu
 NEWSYSLOG_DIR:=	/usr/local/etc/newsyslog.conf.d
