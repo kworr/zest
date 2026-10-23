@@ -33,4 +33,5 @@ jobs:
           run: |
             make >/tmp/Makefile
             make -n -f /tmp/Makefile
-            make -n
+            touch /tmp/_default.mk
+            make -n -C /tmp
