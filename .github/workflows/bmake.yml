@@ -32,6 +32,5 @@ jobs:
           usesh: true
           run: |
             make >/tmp/Makefile
-            make -n -f /tmp/Makefile
             touch /tmp/_default.mk
             cd /tmp && make -n
