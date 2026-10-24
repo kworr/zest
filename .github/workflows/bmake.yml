@@ -32,5 +32,6 @@ jobs:
           usesh: true
           run: |
             make >/tmp/Makefile
-            touch /tmp/_default.mk
+            mkdir -p /tmp/user
+            touch /tmp/_default.mk /tmp/user/.cshrc
             cd /tmp && make -n
