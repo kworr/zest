@@ -9,10 +9,6 @@
 .error MOD unset, need to know module
 .endif
 
-.if empty(FILES)
-.error no FILES to copy
-.endif
-
 .if empty(DEST)
 .	for FILE in ${FILES}
 .		if exists(${.CURDIR}/${MOD}/${MYHOST}/${FILE:T})
