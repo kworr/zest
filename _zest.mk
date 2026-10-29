@@ -2,12 +2,12 @@
 ZEST:=	${.PARSEDIR}
 
 # this for temporary files (and converting service restarts to tasks)
-MAKEOBJDIR:=	${.CURDIR}/obj.${.MAKE.UID}
+MAKEOBJDIR:=	${.CURDIR}/obj.${USER}
 .OBJDIR: ${MAKEOBJDIR}
 
 # This one ensures files will be overwritten even if local configuration is newer
 LAST_UPDATE:=	${MAKEOBJDIR}/last.update
-${LAST_UPDATE}!
+${LAST_UPDATE}! ${MAKEOBJDIR}
 	touch $@
 
 .SILENT:

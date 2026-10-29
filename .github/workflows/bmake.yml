@@ -1,0 +1,40 @@
+name: zest-ci
+on:
+  push:
+    branches: [ master, release ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.head_ref != 'master' && github.head_ref != 'release')
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install bmake
+        run: sudo apt-get update && sudo apt-get install -y bmake
+      - name: Validate generated Makefile
+        run: |
+          bmake >/tmp/Makefile
+          bmake -n -f /tmp/Makefile
+          bmake -n
+
+  freebsd:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.head_ref != 'master' && github.head_ref != 'release')
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          run: |
+            make >/tmp/Makefile
+            mkdir -p /tmp/user
+            touch /tmp/_default.mk /tmp/user/.cshrc
+            cd /tmp && make -n

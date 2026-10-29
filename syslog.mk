@@ -13,7 +13,7 @@ FILES:=	/etc/syslog.conf
 .for FILE in ${SYSLOG_FILES}
 LOGFILES!=	awk '$$2~/\/.*/{print$$2}' < ${.CURDIR}/${FILE}
 ${FILE:T:%.syslog=${SYSLOG_DIR}/%.conf}: ${FILE} _text_file
-.	for LOGFILE in ${LOGFILES:O:u}
+.	for LOGFILE in ${LOGFILES:O:u} # TODO: switch to normal targets?
 .		if !exists(${LOGFILE})
 	echo \# creating ${LOGFILE}
 	touch ${LOGFILE}
