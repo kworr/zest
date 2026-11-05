@@ -11,24 +11,37 @@
 
 .if empty(DEST)
 .	for FILE in ${FILES}
-.		if exists(${.CURDIR}/${MOD}/${MYHOST}/${FILE:T})
-${FILE}: ${.CURDIR}/${MOD}/${MYHOST}/${FILE:T} _text_file
-.		else
-${FILE}: ${.CURDIR}/${MOD}/${FILE:T} _text_file
-.		endif
+ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${FILE:T}
+.		for TAG in ${MYTAGS}
+ITEM_LIST+=	${.CURDIR}/${MOD}/@${TAG}/${FILE:T}
+.		endfor
+ITEM_LIST+=	${.CURDIR}/${MOD}/${FILE:T}
+FOUND:=
+.		for ITEM in ${ITEM_LIST}
+.			if empty(FOUND) && exists(${ITEM})
+FOUND:=	found
+${FILE}: ${ITEM} _text_file
+.			endif
+.		endfor
 .ORDER: ${FILE:H} ${FILE}
 .	endfor
 .else
 .	for FILE in ${FILES}
-.		if exists(${.CURDIR}/${MOD}/${MYHOST}/${FILE})
-${DEST}/${FILE}: ${.CURDIR}/${MOD}/${MYHOST}/${FILE} _text_file
-.		else
-${DEST}/${FILE}: ${.CURDIR}/${MOD}/${FILE} _text_file
-.		endif
-.ORDER: ${DEST}/${FILE} ${DEST}
+ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${FILE}
+.		for TAG in ${MYTAGS}
+ITEM_LIST+=	${.CURDIR}/${MOD}/@${TAG}/${FILE}
+.		endfor
+ITEM_LIST+=	${.CURDIR}/${MOD}/${FILE}
+FOUND:=
+.		for ITEM in ${ITEM_LIST}
+.			if empty(FOUND) && exists(${ITEM})
+FOUND:=	found
+${DEST}/${FILE}: ${ITEM} _text_file
+.			endif
+.		endfor
+.ORDER: ${DEST} ${DEST}/${FILE}
 .	endfor
 .endif
 
 # reset all variables that can change inside module
-DEST:=
-FILES:=
+.undef DEST FILES FOUND ITEM_LIST

@@ -1,7 +1,5 @@
 SSHD_ETC:=	/etc/ssh
 
-.include "${ZEST}/_import.mk"
-
 YEAR_AGO!=date -v -365d +%s
 MODULI_FLAG=${SSHD_ETC}/.moduli_4096_generated
 .if exists(${MODULI_FLAG})

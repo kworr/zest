@@ -6,8 +6,6 @@ NAMED_CONFIGS:=	named logging acls ads generic local master
 
 OLD_FILES:=	/etc/newsyslog.conf.d/named.conf
 
-.include "${ZEST}/_import.mk"
-
 named: /var/log/named clean_stale ${NAMED_COMMAND}
 
 ${NAMED_COMMAND}: \

@@ -3,8 +3,6 @@ OPENDKIM_DB=/var/db/dkim
 
 OPENDKIM_TABLES=KeyTable SigningTable TrustedHosts
 
-.include "${ZEST}/_import.mk"
-
 opendkim: ${OPENDKIM_COMMAND}
 
 ${OPENDKIM_COMMAND}: \

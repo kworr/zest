@@ -2,8 +2,6 @@ POSTFIX_ETC=/usr/local/etc/postfix
 
 POSTFIX_CONFIGS:=	access aliases header_checks main.cf master.cf
 
-.include "${ZEST}/_import.mk"
-
 postfix: ${POSTFIX_COMMAND}
 
 ${POSTFIX_COMMAND}: \

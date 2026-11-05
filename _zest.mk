@@ -54,9 +54,19 @@ SUBDIR:=	user
 .endif
 
 # for `root` - add default modules and then include host config
+# also we are populating ${MYTAGS}
 .if !empty(:!whoami!:Mroot)
 .	include "${.CURDIR}/_default.mk"
+.	for TAGLINE in ${TAGS}
+THIS_HOST:=	${TAGLINE:C|.*=||:S|,| |g:M${MYHOST}}
+.		if !empty(THIS_HOST)
+MYTAGS+=	${TAGLINE:C|=.*||}
+.		endif
+.	endfor
 .	sinclude "${.CURDIR}/_${MYHOST}.mk"
+.	for TAG in ${MYTAGS}
+.		sinclude "${.CURDIR}/@${TAG}.mk"
+.	endfor
 .endif
 
 # import var defines, this is for crossdependencies, when some file is for other
@@ -81,19 +91,22 @@ ${${COMMAND:tu}_COMMAND}: _mark_command
 # configuration
 .for DIR in ${SUBDIR}
 MOD:=	${DIR}
+.	-include "${.CURDIR}/${MOD}/_${MYHOST}.mk"
+.	for TAG in ${MYTAGS}
+.		-include "${.CURDIR}/${MOD}/@${TAG}.mk"
+.	endfor
 .	if exists(Mk/${DIR}.mk)
 .		include "Mk/${DIR}.mk"
 TARGETS+=	${DIR}
-.PHONY: ${DIR}
 .	elif exists(${ZEST}/${DIR}.mk)
 .		include "${ZEST}/${DIR}.mk"
 TARGETS+=	${DIR}
-.PHONY: ${DIR}
 .	else
 .		warning 'Module "${DIR}" not found.'
 .	endif
 .endfor
 
+.PHONY: ${TARGETS}
 .MAIN: ${TARGETS}
 
 clean_stale: clean_files clean_dirs

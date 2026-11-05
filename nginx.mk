@@ -5,8 +5,6 @@ NGINX_SITES:=
 NGINX_CONFIGS:=	le_webroot nginx ssl local
 NGINX_MAINT:=
 
-.include "${ZEST}/_import.mk"
-
 nginx: ${NGINX_COMMAND} clean_stale
 
 ${NGINX_COMMAND}: \

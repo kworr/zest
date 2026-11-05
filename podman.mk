@@ -1,8 +1,6 @@
 PODMAN_CONTAINERS=
 PODMAN_FILES=	/usr/local/etc/containers/containers.conf
 
-.include "${ZEST}/_import.mk"
-
 .for STACK in ${PODMAN_CONTAINERS}
 .	if exists(${MOD}/${STACK})
 PODMAN_TARGETS+=	${MOD}_${STACK}
