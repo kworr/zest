@@ -71,12 +71,16 @@ MYTAGS+=	${TAGLINE:C|=.*||}
 
 # import var defines, this is for crossdependencies, when some file is for other
 # service, and should be hadles correctly elsewhere
-.for DIR in ${SUBDIR}
-.	if exists(Mk/${DIR}.var.mk)
-.		include "Mk/${DIR}.var.mk"
-.	elif exists(${ZEST}/${DIR}.var.mk)
-.		include "${ZEST}/${DIR}.var.mk"
+.for MOD in ${SUBDIR}
+.	if exists(Mk/${MOD}.var.mk)
+.		include "Mk/${MOD}.var.mk"
+.	elif exists(${ZEST}/${MOD}.var.mk)
+.		include "${ZEST}/${MOD}.var.mk"
 .	endif
+.	-include "${.CURDIR}/${MOD}/_${MYHOST}.mk"
+.	for TAG in ${MYTAGS}
+.		-include "${.CURDIR}/${MOD}/@${TAG}.mk"
+.	endfor
 .endfor
 
 # precreate commands, should be split in separate step if more then one module
@@ -89,20 +93,15 @@ ${${COMMAND:tu}_COMMAND}: _mark_command
 
 # now the part that actually defines dependencies based on collected
 # configuration
-.for DIR in ${SUBDIR}
-MOD:=	${DIR}
-.	-include "${.CURDIR}/${MOD}/_${MYHOST}.mk"
-.	for TAG in ${MYTAGS}
-.		-include "${.CURDIR}/${MOD}/@${TAG}.mk"
-.	endfor
-.	if exists(Mk/${DIR}.mk)
-.		include "Mk/${DIR}.mk"
-TARGETS+=	${DIR}
-.	elif exists(${ZEST}/${DIR}.mk)
-.		include "${ZEST}/${DIR}.mk"
-TARGETS+=	${DIR}
+.for MOD in ${SUBDIR}
+.	if exists(Mk/${MOD}.mk)
+.		include "Mk/${MOD}.mk"
+TARGETS+=	${MOD}
+.	elif exists(${ZEST}/${MOD}.mk)
+.		include "${ZEST}/${MOD}.mk"
+TARGETS+=	${MOD}
 .	else
-.		warning 'Module "${DIR}" not found.'
+.		warning 'Module "${MOD}" not found.'
 .	endif
 .endfor
 
