@@ -77,6 +77,7 @@ MYTAGS+=	${TAGLINE:C|=.*||}
 .	elif exists(${ZEST}/${MOD}.var.mk)
 .		include "${ZEST}/${MOD}.var.mk"
 .	endif
+.	-include "${.CURDIR}/${MOD}/_default.mk"
 .	-include "${.CURDIR}/${MOD}/_${MYHOST}.mk"
 .	for TAG in ${MYTAGS}
 .		-include "${.CURDIR}/${MOD}/@${TAG}.mk"
@@ -94,6 +95,7 @@ ${${COMMAND:tu}_COMMAND}: _mark_command
 # now the part that actually defines dependencies based on collected
 # configuration
 .for MOD in ${SUBDIR}
+MOD:=	${MOD} # for include visibility
 .	if exists(Mk/${MOD}.mk)
 .		include "Mk/${MOD}.mk"
 TARGETS+=	${MOD}
