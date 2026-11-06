@@ -24,6 +24,9 @@ ${FILE}: ${ITEM} _text_file
 .			endif
 .		endfor
 .ORDER: ${FILE:H} ${FILE}
+.		if empty(FOUND)
+.			error "No variants found for ${FILE} in ${.CURDIR}/${MOD}
+.		endif
 .	endfor
 .else
 .	for FILE in ${FILES}
@@ -40,6 +43,9 @@ ${DEST}/${FILE}: ${ITEM} _text_file
 .			endif
 .		endfor
 .ORDER: ${DEST} ${DEST}/${FILE}
+.		if empty(FOUND)
+.			error "No variants found for ${DEST}/${FILE} in ${.CURDIR}/${MOD}
+.		endif
 .	endfor
 .endif
 

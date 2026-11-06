@@ -15,15 +15,15 @@ systemd-daemon: ${SYSTEMD_FILES}
 	systemctl daemon-reload
 
 # restarting/reloading individual services if their files were changed
-.for SERVICE in SYSTEMD_SERVICES
+.for SERVICE in ${SYSTEMD_SERVICES}
 # splitting by equal sign (it's optional)
 SERVICE_TUPLE=	${SERVICE:C|=| |}
 # if no sign whole string becomes service name/commands
 SERVICE_DEF:=	${SERVICE_TUPLE:[1]:S|:| |}
 # first work is service name
-SERVICE_NAME:=	${SERVICE_DEF:[0]}
+SERVICE_NAME:=	${SERVICE_DEF:[1]}
 # everything else are systemctl commands
-SERVICE_CMD:=	${SERVICE_DEF:[2..-1]}
+SERVICE_CMDS:=	${SERVICE_DEF:[2..-1]}
 # if we had = everything after that is comma separated list of files
 SERVICE_FILES:=	${SERVICE_TUPLE:[2]:S|,| |}
 # adding those to global list (for reload and copying)
@@ -37,4 +37,4 @@ systemd--${SERVICE_NAME}: ${SERVICE_FILES}
 .endfor
 
 FILES:=	${SYSTEMD_FILES}
-.include ${ZEST}/_copy_files.mk
+.include "${ZEST}/_copy_files.mk"

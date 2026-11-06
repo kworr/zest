@@ -16,6 +16,10 @@ TARGETS:=
 .include "_config.mk"
 .sinclude "${.CURDIR}/_config.mk"
 
+.if !empty(MYHOST:N[a-z0-9])
+.	error "only FQDN hostnames are supported."
+.endif
+
 .MAKE.JOBS?=1
 .if !empty(.MAKE.MODE:Mcompat)
 .error "ERROR: Zest doesn't support "compat" mode."
