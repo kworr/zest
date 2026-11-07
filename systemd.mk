@@ -5,15 +5,6 @@
 #
 # Later definitely need to process all of that better
 
-# here individual services does not depend on global reload, but if reload
-# happens it should happen before other services are restarted
-systemd: ${SYSTEMD_SERVICES} systemd-daemon
-.ORDER: systemd-daemon ${SYSTEMD_SERVICES}
-
-# reloading systemctl if any files were changed
-systemd-daemon: ${SYSTEMD_FILES}
-	systemctl daemon-reload
-
 # restarting/reloading individual services if their files were changed
 .for SERVICE in ${SYSTEMD_SERVICES}
 # splitting by equal sign (it's optional)
@@ -28,13 +19,20 @@ SERVICE_CMDS:=	${SERVICE_DEF:[2..-1]}
 SERVICE_FILES:=	${SERVICE_TUPLE:[2]:S|,| |}
 # adding those to global list (for reload and copying)
 SYSTEMD_FILES+=	${SERVICE_FILES}
-# and to global list of services
-SYSTEMD_SERVICES+=	systemd--${SERVICE_NAME}
-systemd--${SERVICE_NAME}: ${SERVICE_FILES}
+# and creating a class for each service, it's up module to properly integrate
+# that class with other configuration files
+_systemd_${SERVICE_NAME}: ${SERVICE_FILES} .USEBEFORE
 .	for SERVICE_CMD in ${SERVICE_CMDS}
 	systemctl ${SERVICE_CMD} ${SERVICE_NAME}
 .	endfor
+# here individual services does not depend on global reload, but if reload
+# happens it should happen before other services are restarted 
+.ORDER: systemd _systemd_${SERVICE_NAME}
 .endfor
+
+# reloading systemctl if any files were changed
+systemd: ${SYSTEMD_FILES}
+	systemctl daemon-reload
 
 FILES:=	${SYSTEMD_FILES}
 .include "${ZEST}/_copy_files.mk"
