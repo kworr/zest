@@ -5,11 +5,15 @@ USER_LINKS:=
 # cargo
 USER_FILES+=	${HOME}/.cargo/config.toml
 STALE_FILES+=	${HOME}/.cargo/config
+.else
+STALE_FILES+=	${HOME}/.cargo/config.toml
 .endif
 
 .if exists(/usr/local/lib/libgtk-3.so)
 # GTK 3.0
 USER_FILES+=	${HOME}/.config/gtk-3.0/settings.ini
+.else
+STALE_FILES+=	${HOME}/.config/gtk-3.0/settings.ini
 .endif
 
 .if exists(/usr/local/lib/libfontconfig.so)
@@ -26,7 +30,8 @@ USER_FILES+=	${HOME}/.cshrc
 USER_LINKS+=	${HOME}/.icons/default
 
 ${HOME}/.icons: _make_dir
-${HOME}/.icons/default: /usr/local/share/icons/Ardoise_shadow_75 ${HOME}/.icons _link_file
+${HOME}/.icons/default: /usr/local/share/icons/Ardoise_shadow_75 _link_file
+.ORDER: ${HOME}/.icons ${HOME}/.icons/default
 .endif
 
 .if exists(/usr/local/bin/tmux)
