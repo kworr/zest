@@ -9,45 +9,31 @@
 .error MOD unset, need to know module
 .endif
 
-.if empty(DEST)
-.	for FILE in ${FILES}
-ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${FILE:T}
-.		for TAG in ${MYTAGS}
-ITEM_LIST+=	${.CURDIR}/${MOD}/@${TAG}/${FILE:T}
-.		endfor
-ITEM_LIST+=	${.CURDIR}/${MOD}/${FILE:T}
+.for FILE in ${FILES}
+.	if empty(DEST)
+MYDEST:=	${FILE:H}
+MYFILE:=	${FILE:T}
+.	else
+MYDEST:=	${DEST}
+MYFILE:=	${FILE}
+.	endif
+ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
+.	for TAG in ${MYTAGS}
+ITEM_LIST+=	${.CURDIR}/${MOD}/@${TAG}/${MYFILE}
+.	endfor
+ITEM_LIST+=	${.CURDIR}/${MOD}/${MYFILE}
 FOUND:=
-.		for ITEM in ${ITEM_LIST}
-.			if empty(FOUND) && exists(${ITEM})
+.	for ITEM in ${ITEM_LIST}
+.		if empty(FOUND) && exists(${ITEM})
 FOUND:=	found
-${FILE}: ${ITEM} _text_file
-.ORDER: ${FILE:H} ${FILE}
-.			endif
-.		endfor
-.		if empty(FOUND)
-.			error "No variants found for ${FILE} in ${.CURDIR}/${MOD}
+${MYDEST}/${MYFILE}: ${ITEM} _text_file
+.ORDER: ${MYDEST} ${MYDEST}/${MYFILE}
 .		endif
 .	endfor
-.else
-.	for FILE in ${FILES}
-ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${FILE}
-.		for TAG in ${MYTAGS}
-ITEM_LIST+=	${.CURDIR}/${MOD}/@${TAG}/${FILE}
-.		endfor
-ITEM_LIST+=	${.CURDIR}/${MOD}/${FILE}
-FOUND:=
-.		for ITEM in ${ITEM_LIST}
-.			if empty(FOUND) && exists(${ITEM})
-FOUND:=	found
-${DEST}/${FILE}: ${ITEM} _text_file
-.ORDER: ${DEST} ${DEST}/${FILE}
-.			endif
-.		endfor
-.		if empty(FOUND)
-.			error "No variants found for ${DEST}/${FILE} in ${.CURDIR}/${MOD}
-.		endif
-.	endfor
-.endif
+.	if empty(FOUND)
+.		error "No variants found for ${MYFILE} in ${.CURDIR}/${MOD}
+.	endif
+.endfor
 
 # reset all variables that can change inside module
-.undef DEST FILES FOUND ITEM_LIST
+.undef DEST FILES FOUND ITEM_LIST MYDEST MYFILE
