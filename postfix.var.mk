@@ -1,1 +1,2 @@
-COMMANDS+=	postfix
+SERVICES+=	postfix:restart
+SUBDIR+=	service

@@ -2,9 +2,11 @@ POSTFIX_ETC=/usr/local/etc/postfix
 
 POSTFIX_CONFIGS:=	access aliases header_checks main.cf master.cf
 
-postfix: ${POSTFIX_COMMAND}
+postfix: ${SERVICE_POSTFIX} ${POSTFIX_ETC}
 
-${POSTFIX_COMMAND}: \
+${SERVICE_POSTFIX}: postfix_rehash
+
+postfix_rehash: \
 	${POSTFIX_ETC}/Makefile \
 	${POSTFIX_CONFIGS:%=${POSTFIX_ETC}/%}
 	make -C ${POSTFIX_ETC} -j ${.MAKE.JOBS}

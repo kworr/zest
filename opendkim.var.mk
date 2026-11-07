@@ -1,1 +1,2 @@
-COMMANDS+=	opendkim
+SERVICES+=	opendkim:restart
+SUBDIR+=	service

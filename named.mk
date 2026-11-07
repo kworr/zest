@@ -6,11 +6,13 @@ NAMED_CONFIGS:=	named logging acls ads generic local master
 
 OLD_FILES:=	/etc/newsyslog.conf.d/named.conf
 
-named: /var/log/named clean_stale ${NAMED_COMMAND}
+named: /var/log/named clean_stale ${SERVICE_NAMED}
 
-${NAMED_COMMAND}: \
+${SERVICE_NAMED}: \
 	${NAMED_CONFIGS:%=${NAMED_ETC}/%.conf} \
 	${NAMED_ZONES:%=${NAMED_ETC}/master/%.db}
+
+_named_reload: .USE
 	rndc reload
 
 ${NAMED_ETC}: _make_dir

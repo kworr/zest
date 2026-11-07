@@ -3,12 +3,11 @@ OPENDKIM_DB=/var/db/dkim
 
 OPENDKIM_TABLES=KeyTable SigningTable TrustedHosts
 
-opendkim: ${OPENDKIM_COMMAND}
+opendkim: ${SERVICE_OPENDKIM}
 
-${OPENDKIM_COMMAND}: \
+${SERVICE_OPENDKIM}: \
 	${OPENDKIM_ETC}/opendkim.conf \
 	${OPENDKIM_TABLES:%=${OPENDKIM_DB}/%}
-	service milter-opendkim restart
 
 ${OPENDKIM_DB}: _make_dir
 

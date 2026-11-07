@@ -5,13 +5,15 @@ NGINX_SITES:=
 NGINX_CONFIGS:=	le_webroot nginx ssl local
 NGINX_MAINT:=
 
-nginx: ${NGINX_COMMAND} clean_stale
+nginx: ${SERVICE_NGINX} clean_stale
 
-${NGINX_COMMAND}: \
+${SERVICE_NGINX}: \
 	/var/ca/dhparam.pem \
 	${NGINX_SITES:%=${NGINX_ETC}/local/%.conf} \
 	${NGINX_CONFIGS:%=${NGINX_ETC}/%.conf} \
 	${NGINX_MAINT:%=${NGINX_ETC}/maintenance/%.html}
+
+_nginx_reload: .USE
 	nginx -t && nginx -s reload
 
 /var/ca: _make_dir

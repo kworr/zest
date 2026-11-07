@@ -1,1 +1,2 @@
-COMMANDS+=	dhcpcd
+SERVICES+=	dhcpcd:restart
+SUBDIR+=	service

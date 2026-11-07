@@ -14,9 +14,11 @@ ${MOD}_${STACK}: .PHONY
 .	endif
 .endfor
 
-podman: ${PODMAN_SERVICE_COMMAND} .WAIT ${PODMAN_TARGETS}
-${PODMAN_SERVICE_COMMAND}: ${PODMAN_FILES}
-	service podman_service restart
+podman: ${PODMAN_TARGETS}
+
+${PODMAN_TARGETS}: ${SERVICE_PODMAN_SERVICE}
+
+${SERVICE_PODMAN_SERVICE}: ${PODMAN_FILES}
 
 FILES:=	${PODMAN_FILES}
 .include "${ZEST}/_copy_files.mk"

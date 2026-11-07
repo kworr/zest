@@ -41,16 +41,14 @@ _text_file: .USEBEFORE ${LAST_UPDATE}
 
 _link_file: .USEBEFORE ${LAST_UPDATE}
 	if [ -f $@ ]; then \
-		ll $@; \
+		ls -la $@; \
 	else \
 		echo '# new link $@'; \
 	fi
 	${INSTALL} -lsa ${>:[1]} $@
 
 _make_dir: .USEBEFORE
-	if [ !-f $@ ]; then \
-		echo '# new dir $@'; \
-	fi
+	echo '# new dir $@'; \
 	${INSTALL_DIR} $@
 
 .for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${MAKEOBJDIR}
@@ -68,26 +66,34 @@ SUBDIR:=	${.TARGETS}
 SUBDIR:=	user
 .endif
 
+#### Global configuration
 # for `root` - add default modules and then include host config
 # also we are populating ${MYTAGS}
-.if empty(USER:Nroot)
+.if empty(USER:Nroot) && empty(.TARGETS)
 .	include "${.CURDIR}/_default.mk"
-.	for TAGLINE in ${TAGS}
+.		for TAGLINE in ${TAGS}
 THIS_HOST:=	${TAGLINE:C|.*=||:S|,| |g:M${MYHOST}}
-.		if !empty(THIS_HOST)
+.			if !empty(THIS_HOST)
 MYTAGS+=	${TAGLINE:C|=.*||}
-.		endif
-.	endfor
-.	sinclude "${.CURDIR}/_${MYHOST}.mk"
+.			endif
+.		endfor
+.		sinclude "${.CURDIR}/_${MYHOST}.mk"
 .	for TAG in ${MYTAGS}
 .		sinclude "${.CURDIR}/@${TAG}.mk"
 .	endfor
 .endif
 
+# now we are making SUBDIR empty for second pass, where modules can declare
+# depends, this time it's order is precious, as, for example, services should
+# populate variables before the module is referencing those targets
+UNORDERED_SUBDIR:=	${SUBDIR}
+SUBDIR:=
 
+#### Per module configuration
 # import var defines, this is for crossdependencies, when some file is for other
 # service, and should be hadles correctly elsewhere
-.for MOD in ${SUBDIR:O:u}
+.for MOD in ${UNORDERED_SUBDIR:O:u}
+MOD:=	${MOD} # for include visibility
 .	if exists(Mk/${MOD}.var.mk)
 .		include "Mk/${MOD}.var.mk"
 .	elif exists(${ZEST}/${MOD}.var.mk)
@@ -98,28 +104,29 @@ MYTAGS+=	${TAGLINE:C|=.*||}
 .	for TAG in ${MYTAGS}
 .		-include "${.CURDIR}/${MOD}/@${TAG}.mk"
 .	endfor
+SUBDIR+=	${MOD}
 .endfor
 
-# precreate commands, should be split in separate step if more then one module
-# would require to precreate some targets based on vars
-.for COMMAND in ${COMMANDS}
-${COMMAND:tu}_COMMAND:=	${MAKEOBJDIR}/${COMMAND}.restarted
-${${COMMAND:tu}_COMMAND}: _mark_command
-.ORDER: ${MAKEOBJDIR} ${${COMMAND:tu}_COMMAND}
-.endfor
+# Now SUBDIR can refer to other modules twice, but we don't need to include
+# them more then once, and we olready have them in a working order, so we just
+# skipping duplicates
+INCLUDED:=
 
 # now the part that actually defines dependencies based on collected
 # configuration
-.for MOD in ${SUBDIR:O:u}
+.for MOD in ${SUBDIR}
+.	if empty(INCLUDED:M${MOD})
 MOD:=	${MOD} # for include visibility
-.	if exists(Mk/${MOD}.mk)
-.		include "Mk/${MOD}.mk"
+.		if exists(Mk/${MOD}.mk)
+.			include "Mk/${MOD}.mk"
 TARGETS+=	${MOD}
-.	elif exists(${ZEST}/${MOD}.mk)
-.		include "${ZEST}/${MOD}.mk"
+.		elif exists(${ZEST}/${MOD}.mk)
+.			include "${ZEST}/${MOD}.mk"
 TARGETS+=	${MOD}
-.	else
-.		warning 'Module "${MOD}" not found.'
+.		else
+.			warning 'Module "${MOD}" not found.'
+.		endif
+INCLUDED+=	${MOD}
 .	endif
 .endfor
 

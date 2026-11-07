@@ -1,2 +1,3 @@
 NEWSYSLOG_FILES+=	nginx/nginx.newsyslog
-COMMANDS+=	nginx
+SERVICES+=	nginx:_nginx_reload
+SUBDIR+=	service

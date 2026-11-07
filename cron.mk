@@ -1,10 +1,8 @@
 CRON_FILES:=	/etc/cron.d/hourly
 
-cron: ${CRON_COMMAND}
+cron: ${SERVICE_CRON}
 
-${CRON_COMMAND}: \
-	${CRON_FILES}
-	service cron restart
+${SERVICE_CRON}: ${CRON_FILES}
 
 FILES:=	${CRON_FILES}
 .include "${ZEST}/_copy_files.mk"
