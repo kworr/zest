@@ -16,7 +16,7 @@ TARGETS:=
 .include "_config.mk"
 .sinclude "${.CURDIR}/_config.mk"
 
-.if !empty(MYHOST:N[a-z0-9])
+.if !empty(MYHOST:C|[a-z][a-z0-9]*||)
 .	error "only FQDN hostnames are supported."
 .endif
 
@@ -25,6 +25,9 @@ TARGETS:=
 .error "ERROR: Zest doesn't support "compat" mode."
 .endif
 
+# This means the target is a path to file under OBJDIR, and should be bumped
+# makes current target a one-shot command, that will be executed when any deps
+# change
 _mark_command: .USE
 	touch $@
 
@@ -37,9 +40,17 @@ _text_file: .USEBEFORE ${LAST_UPDATE}
 	${INSTALL} ${>:[1]} $@
 
 _link_file: .USEBEFORE ${LAST_UPDATE}
+	if [ -f $@ ]; then \
+		ll $@; \
+	else \
+		echo '# new link $@'; \
+	fi
 	${INSTALL} -lsa ${>:[1]} $@
 
 _make_dir: .USEBEFORE
+	if [ !-f $@ ]; then \
+		echo '# new dir $@'; \
+	fi
 	${INSTALL_DIR} $@
 
 .for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${MAKEOBJDIR}
@@ -59,7 +70,7 @@ SUBDIR:=	user
 
 # for `root` - add default modules and then include host config
 # also we are populating ${MYTAGS}
-.if !empty(:!whoami!:Mroot)
+.if empty(USER:Nroot)
 .	include "${.CURDIR}/_default.mk"
 .	for TAGLINE in ${TAGS}
 THIS_HOST:=	${TAGLINE:C|.*=||:S|,| |g:M${MYHOST}}
@@ -73,9 +84,10 @@ MYTAGS+=	${TAGLINE:C|=.*||}
 .	endfor
 .endif
 
+
 # import var defines, this is for crossdependencies, when some file is for other
 # service, and should be hadles correctly elsewhere
-.for MOD in ${SUBDIR}
+.for MOD in ${SUBDIR:O:u}
 .	if exists(Mk/${MOD}.var.mk)
 .		include "Mk/${MOD}.var.mk"
 .	elif exists(${ZEST}/${MOD}.var.mk)
@@ -98,7 +110,7 @@ ${${COMMAND:tu}_COMMAND}: _mark_command
 
 # now the part that actually defines dependencies based on collected
 # configuration
-.for MOD in ${SUBDIR}
+.for MOD in ${SUBDIR:O:u}
 MOD:=	${MOD} # for include visibility
 .	if exists(Mk/${MOD}.mk)
 .		include "Mk/${MOD}.mk"
