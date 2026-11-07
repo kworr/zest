@@ -17,6 +17,7 @@ MYFILE:=	${FILE:T}
 MYDEST:=	${DEST}
 MYFILE:=	${FILE}
 .	endif
+${MYDEST}: _make_dir
 ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
 .	for TAG in ${MYTAGS}
 ITEM_LIST+=	${.CURDIR}/${MOD}/@${TAG}/${MYFILE}
@@ -31,7 +32,7 @@ ${MYDEST}/${MYFILE}: ${ITEM} _text_file
 .		endif
 .	endfor
 .	if empty(FOUND)
-.		error "No variants found for ${MYFILE} in ${.CURDIR}/${MOD}
+.		error No variants found for ${MYFILE} in ${.CURDIR}/${MOD}
 .	endif
 .endfor
 

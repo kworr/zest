@@ -23,5 +23,5 @@ ${SERVICE_${SERVICE_NAME:tu}}: _mark_command ${SERVICE_CMDS:M_*}
 .	for SERVICE_CMD in ${SERVICE_CMDS:N_*}
 	service ${SERVICE:S|:| |g:[1]} ${SERVICE_CMD}
 .	endfor
-.ORDER: ${MAKEOBJDIR} ${SERVICE_${SERVICE:tu}}
+.ORDER: ${MAKEOBJDIR} ${SERVICE_${SERVICE_NAME:tu}}
 .endfor
