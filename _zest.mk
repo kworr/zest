@@ -16,7 +16,7 @@ TARGETS:=
 .include "_config.mk"
 .sinclude "${.CURDIR}/_config.mk"
 
-.if !empty(MYHOST:C|[a-z][a-z0-9]*||)
+.if !empty(MYHOST:C|[a-zA-Z0-9-]*||)
 .	error "only FQDN hostnames are supported."
 .endif
 

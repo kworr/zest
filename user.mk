@@ -1,5 +1,6 @@
 USER_FILES:=
 USER_LINKS:=
+USER_DIRS:=
 
 .if exists(/usr/local/bin/cargo)
 # cargo
@@ -11,6 +12,7 @@ STALE_FILES+=	${HOME}/.cargo/config.toml
 
 .if exists(/usr/local/lib/libgtk-3.so)
 # GTK 3.0
+# TODO: checks are mostly BSD centric right now, might be expanded later
 USER_FILES+=	${HOME}/.config/gtk-3.0/settings.ini
 .else
 STALE_FILES+=	${HOME}/.config/gtk-3.0/settings.ini
@@ -28,6 +30,7 @@ USER_FILES+=	${HOME}/.cshrc
 .if exists(/usr/local/share/icons/Ardoise_no_shadow_75)
 # icons (mouse cursor)
 USER_LINKS+=	${HOME}/.icons/default
+USER_DIRS+=	${HOME}/.icons
 
 ${HOME}/.icons: _make_dir
 ${HOME}/.icons/default: /usr/local/share/icons/Ardoise_shadow_75 _link_file
@@ -48,4 +51,4 @@ USER_FILES+=	${HOME}/.Xdefaults \
 FILES:=	${USER_FILES}
 .include "${ZEST}/_copy_files.mk"
 
-user: clean_stale .WAIT ${USER_FILES} ${USER_LINKS}
+user: clean_stale .WAIT ${USER_FILES} ${USER_LINKS} ${USER_DIRS}

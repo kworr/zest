@@ -10,13 +10,13 @@
 # splitting by equal sign (it's optional)
 SERVICE_TUPLE=	${SERVICE:C|=| |}
 # if no sign whole string becomes service name/commands
-SERVICE_DEF:=	${SERVICE_TUPLE:[1]:S|:| |}
+SERVICE_DEF:=	${SERVICE_TUPLE:[1]:S|:| |g}
 # first work is service name
 SERVICE_NAME:=	${SERVICE_DEF:[1]}
 # everything else are systemctl commands
 SERVICE_CMDS:=	${SERVICE_DEF:[2..-1]}
 # if we had = everything after that is comma separated list of files
-SERVICE_FILES:=	${SERVICE_TUPLE:[2]:S|,| |}
+SERVICE_FILES:=	${SERVICE_TUPLE:[2]:S|,| |g}
 # adding those to global list (for reload and copying)
 SYSTEMD_FILES+=	${SERVICE_FILES}
 # and creating a class for each service, it's up module to properly integrate
