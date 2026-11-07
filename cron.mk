@@ -1,4 +1,4 @@
-CRON_FILES:=	/etc/cron.d/hourly
+CRON_FILES+=	/etc/cron.d/hourly
 
 cron: ${SERVICE_CRON}
 

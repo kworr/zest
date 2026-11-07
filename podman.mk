@@ -1,5 +1,5 @@
-PODMAN_CONTAINERS=
-PODMAN_FILES=	/usr/local/etc/containers/containers.conf
+PODMAN_CONTAINERS?=
+PODMAN_FILES+=	/usr/local/etc/containers/containers.conf
 
 .for STACK in ${PODMAN_CONTAINERS}
 .	if exists(${MOD}/${STACK})

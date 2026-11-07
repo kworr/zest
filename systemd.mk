@@ -24,6 +24,7 @@ SYSTEMD_FILES+=	${SERVICE_FILES}
 SYSTEMD_SERVICE_${SERVICE_NAME:tu}:=	${MAKEOBJDIR}/${SERVICE_NAME}.systemd
 ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}: ${SERVICE_FILES} _mark_command
 .	for SERVICE_CMD in ${SERVICE_CMDS}
+SERVICE_CMD:=	${SERVICE_CMD}
 	systemctl ${SERVICE_CMD} ${SERVICE_NAME}
 .	endfor
 # here individual services does not depend on global reload, but if reload

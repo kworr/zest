@@ -1,2 +1,2 @@
 SERVICES+=	podman_service:restart
-SUVDIR+=	service
+SUBDIR+=	service

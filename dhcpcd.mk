@@ -1,4 +1,4 @@
-DHCPCD_FILES:=	/usr/local/etc/dhcpcd.conf
+DHCPCD_FILES+=	/usr/local/etc/dhcpcd.conf
 
 dhcpcd: ${SERVICE_DHCPCD}
 

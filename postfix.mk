@@ -1,17 +1,16 @@
-POSTFIX_ETC=/usr/local/etc/postfix
+POSTFIX_ETC?=	/usr/local/etc/postfix
 
-POSTFIX_CONFIGS:=	access aliases header_checks main.cf master.cf
+POSTFIX_CONFIGS+=	access aliases header_checks main.cf master.cf
 
 postfix: ${SERVICE_POSTFIX} ${POSTFIX_ETC}
 
 ${SERVICE_POSTFIX}: postfix_rehash
 
-postfix_rehash: \
+${MAKEOBJDIR}/postfix_rehashed: \
 	${POSTFIX_ETC}/Makefile \
 	${POSTFIX_CONFIGS:%=${POSTFIX_ETC}/%}
 	make -C ${POSTFIX_ETC} -j ${.MAKE.JOBS}
-
-${POSTFIX_ETC}: _make_dir
+	touch $@
 
 ${POSTFIX_ETC}/Makefile: postfix/index.mk _text_file
 .ORDER: ${POSTFIX_ETC} ${POSTFIX_ETC}/Makefile

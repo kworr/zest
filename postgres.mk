@@ -1,7 +1,7 @@
-POSTGRES_VERSION:=14
-POSTGRES_ETC=/var/db/postgres/data${POSTGRES_VERSION}
+POSTGRES_VERSION?=14
+POSTGRES_ETC?=	/var/db/postgres/data${POSTGRES_VERSION}
 
-POSTGRES_CONFIGS:=	pg_hba postgresql pg_ident
+POSTGRES_CONFIGS+=	pg_hba postgresql pg_ident
 
 postgres: \
 	${PAM_DIR}/postgres \

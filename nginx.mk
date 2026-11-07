@@ -1,9 +1,9 @@
-NGINX_ETC=/usr/local/etc/nginx
-INSTALLED=${:!cd ${NGINX_ETC}/local && find . -type f!:C|^\.\/||:C|\.conf$||}
+NGINX_ETC?=	/usr/local/etc/nginx
+INSTALLED:=	${:!cd ${NGINX_ETC}/local && find . -type f!:C|^\.\/||:C|\.conf$||}
 
-NGINX_SITES:=
-NGINX_CONFIGS:=	le_webroot nginx ssl local
-NGINX_MAINT:=
+NGINX_SITES?=
+NGINX_CONFIGS+=	le_webroot nginx ssl local
+NGINX_MAINT?=
 
 nginx: ${SERVICE_NGINX} clean_stale
 
@@ -17,11 +17,8 @@ _nginx_reload: .USE
 	nginx -t && nginx -s reload
 
 /var/ca: _make_dir
-${NGINX_ETC}: _make_dir
 ${NGINX_ETC}/local: _make_dir
 ${NGINX_ETC}/maintenance: _make_dir
-.ORDER: ${NGINX_ETC} ${NGINX_ETC}/local
-.ORDER: ${NGINX_ETC} ${NGINX_ETC}/maintenance
 
 FILES:=	${NGINX_CONFIGS:%=%.conf}
 DEST:=	${NGINX_ETC}
@@ -38,7 +35,7 @@ ${NGINX_ETC}/maintenance/${PAGE}.html: nginx/${PAGE}.html ${NGINX_ETC}/maintenan
 .ORDER: ${NGINX_ETC}/maintenance ${NGINX_ETC}/maintenance/${PAGE}.conf
 .endfor
 
-STALE_FILES=${INSTALLED:C|^.+$|${NGINX_ETC}/local/&.conf|g}
+STALE_FILES+= ${INSTALLED:C|^.+$|${NGINX_ETC}/local/&.conf|g}
 
 /var/ca/dhparam.pem: /var/ca
 	openssl dhparam -dsaparam -out $@ 4096

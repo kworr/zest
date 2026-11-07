@@ -1,2 +1,2 @@
-SERVICES+=	etc_resolvconf:_etc_resolvconf
+SERVICES+=	resolvconf:_etc_resolvconf
 SUBDIR+=	service

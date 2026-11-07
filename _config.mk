@@ -26,6 +26,4 @@ INSTALL+=	-U
 .error Unsupported os [${OS}], please add to _config.mk
 .endif
 
-COMMANDS:=
-
 PAM_DIR:=	/etc/pam.d

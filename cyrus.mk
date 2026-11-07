@@ -1,6 +1,6 @@
-CYRUS_ETC=/usr/local/etc
+CYRUS_ETC?=	/usr/local/etc
 
-CYRUS_FILES:=	imapd.conf cyrus.conf
+CYRUS_FILES+=	imapd.conf cyrus.conf
 
 cyrus: ${SERVICE_IMAPD}
 

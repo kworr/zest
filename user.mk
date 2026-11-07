@@ -1,6 +1,6 @@
-USER_FILES:=
-USER_LINKS:=
-USER_DIRS:=
+USER_FILES?=
+USER_LINKS?=
+USER_DIRS?=
 
 .if exists(/usr/local/bin/cargo)
 # cargo

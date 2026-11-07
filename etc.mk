@@ -1,9 +1,9 @@
-ETC_FILES:=	\
+ETC_FILES+=	\
 	/etc/csh.cshrc \
 	/etc/motd.template \
 	/etc/periodic.conf \
 	/etc/periodic.local
-ETC_FILES_RESOLVCONF:=	/etc/resolvconf.conf
+ETC_FILES_RESOLVCONF+=	/etc/resolvconf.conf
 
 etc: ${ETC_FILES} ${SERVICE_RESOLVCONF}
 

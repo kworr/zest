@@ -1,11 +1,11 @@
-SSHD_ETC:=	/etc/ssh
+SSHD_ETC?=	/etc/ssh
 
-YEAR_AGO!=date -v -365d +%s
-MODULI_FLAG=${SSHD_ETC}/.moduli_4096_generated
+YEAR_AGO!=	date -v -365d +%s
+MODULI_FLAG:=	${SSHD_ETC}/.moduli_4096_generated
 .if exists(${MODULI_FLAG})
-MODULI_CHANGE!=stat -f%m ${MODULI_FLAG}
+MODULI_CHANGE!=	stat -f%m ${MODULI_FLAG}
 .else
-MODULI_CHANGE=0
+MODULI_CHANGE=	0
 .endif
 
 ${SSHD_ETC}/ssh_host_rsa_key:

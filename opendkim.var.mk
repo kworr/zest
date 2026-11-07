@@ -1,2 +1,2 @@
-SERVICES+=	opendkim:restart
+SERVICES+=	milter-opendkim:restart
 SUBDIR+=	service
