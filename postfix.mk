@@ -4,7 +4,7 @@ POSTFIX_CONFIGS+=	access aliases header_checks main.cf master.cf
 
 postfix: ${SERVICE_POSTFIX} ${POSTFIX_ETC}
 
-${SERVICE_POSTFIX}: postfix_rehash
+${SERVICE_POSTFIX}: ${MAKEOBJDIR}/postfix_rehashed
 
 ${MAKEOBJDIR}/postfix_rehashed: \
 	${POSTFIX_ETC}/Makefile \

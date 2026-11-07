@@ -21,8 +21,7 @@ SERVICE_CMDS:=	${SERVICE_DEF:[2..-1]}
 SERVICE_${SERVICE_NAME:tu}:=	${MAKEOBJDIR}/${SERVICE_NAME}.service
 ${SERVICE_${SERVICE_NAME:tu}}: _mark_command ${SERVICE_CMDS:M_*}
 .	for SERVICE_CMD in ${SERVICE_CMDS:N_*}
-SERVICE_CMD:=	${SERVICE_CMD}
-	service ${SERVICE_NAME} ${SERVICE_CMD}
+	service ${SERVICE:S|:| |g:[1]} ${SERVICE_CMD}
 .	endfor
 .ORDER: ${MAKEOBJDIR} ${SERVICE_${SERVICE:tu}}
 .endfor
