@@ -21,9 +21,9 @@ FOUND:=
 .			if empty(FOUND) && exists(${ITEM})
 FOUND:=	found
 ${FILE}: ${ITEM} _text_file
+.ORDER: ${FILE:H} ${FILE}
 .			endif
 .		endfor
-.ORDER: ${FILE:H} ${FILE}
 .		if empty(FOUND)
 .			error "No variants found for ${FILE} in ${.CURDIR}/${MOD}
 .		endif
@@ -40,9 +40,9 @@ FOUND:=
 .			if empty(FOUND) && exists(${ITEM})
 FOUND:=	found
 ${DEST}/${FILE}: ${ITEM} _text_file
+.ORDER: ${DEST} ${DEST}/${FILE}
 .			endif
 .		endfor
-.ORDER: ${DEST} ${DEST}/${FILE}
 .		if empty(FOUND)
 .			error "No variants found for ${DEST}/${FILE} in ${.CURDIR}/${MOD}
 .		endif
