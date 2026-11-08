@@ -51,7 +51,7 @@ _make_dir: .USEBEFORE
 	${INSTALL_DIR} $@
 
 .for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${.OBJDIR}
-.	if !exists(DIR)
+.	if !exists(${DIR})
 ${DIR}: _make_dir
 TARGETS+=	${DIR}
 .	endif

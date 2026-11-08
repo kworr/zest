@@ -4,6 +4,7 @@ INSTALLED:=	${:!cd ${NGINX_ETC}/local && find . -type f!:C|^\.\/||:C|\.conf$||}
 NGINX_SITES?=
 NGINX_CONFIGS+=	le_webroot nginx ssl local
 NGINX_MAINT?=
+NGINX_DIRS:= /var/ca ${NGINX_ETC}/local ${NGINX_ETC}/maintenance
 
 nginx: ${SERVICE_NGINX} clean_stale
 
@@ -17,8 +18,7 @@ ${SERVICE_NGINX}: \
 _nginx_reload: .USE
 	nginx -t && nginx -s reload
 
-NGINX_DIRS:= /var/ca ${NGINX_ETC}/local ${NGINX_ETC}/maintenance
-fir DIR in ${NGINX_DIRS}
+.for DIR in ${NGINX_DIRS}
 ${DIR}: _make_dir
 .endfor
 
