@@ -18,10 +18,10 @@ SERVICE_NAME:=	${SERVICE_DEF:[1]}
 SERVICE_CMDS:=	${SERVICE_DEF:[2..-1]}
 # creating a class for each service, it's up module to properly integrate
 # that class with other configuration files
-SERVICE_${SERVICE_NAME:tu}:=	${MAKEOBJDIR}/${SERVICE_NAME}.service
+SERVICE_${SERVICE_NAME:tu}:=	${.OBJDIR}/${SERVICE_NAME}.service
 ${SERVICE_${SERVICE_NAME:tu}}: _mark_command ${SERVICE_CMDS:M_*}
 .	for SERVICE_CMD in ${SERVICE_CMDS:N_*}
 	service ${SERVICE:S|:| |g:[1]} ${SERVICE_CMD}
 .	endfor
-.ORDER: ${MAKEOBJDIR} ${SERVICE_${SERVICE_NAME:tu}}
+.ORDER: ${.OBJDIR} ${SERVICE_${SERVICE_NAME:tu}}
 .endfor

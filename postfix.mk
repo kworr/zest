@@ -4,9 +4,9 @@ POSTFIX_CONFIGS+=	access aliases header_checks main.cf master.cf
 
 postfix: ${SERVICE_POSTFIX} ${POSTFIX_ETC}
 
-${SERVICE_POSTFIX}: ${MAKEOBJDIR}/postfix_rehashed
+${SERVICE_POSTFIX}: ${.OBJDIR}/postfix_rehashed
 
-${MAKEOBJDIR}/postfix_rehashed: \
+${.OBJDIR}/postfix_rehashed: \
 	${POSTFIX_ETC}/Makefile \
 	${POSTFIX_CONFIGS:%=${POSTFIX_ETC}/%}
 	make -C ${POSTFIX_ETC} -j ${.MAKE.JOBS}

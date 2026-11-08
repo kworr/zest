@@ -21,18 +21,18 @@ SERVICE_FILES:=	${SERVICE_TUPLE:[2]:S|,| |g}
 SYSTEMD_FILES+=	${SERVICE_FILES}
 # and creating a class for each service, it's up module to properly integrate
 # that class with other configuration files
-SYSTEMD_SERVICE_${SERVICE_NAME:tu}:=	${MAKEOBJDIR}/${SERVICE_NAME}.systemd
+SYSTEMD_SERVICE_${SERVICE_NAME:tu}:=	${.OBJDIR}/${SERVICE_NAME}.systemd
 ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}: ${SERVICE_FILES} _mark_command
 .	for SERVICE_CMD in ${SERVICE_CMDS}
 	systemctl ${SERVICE_CMD} ${SERVICE:C|=| |:[1]:S|:| |g:[1]}
 .	endfor
 # here individual services does not depend on global reload, but if reload
-# happens it should happen before other services are restarted 
-.ORDER: ${MAKEOBJDIR} systemd ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}
+# happens it should happen before other services are restarted
+.ORDER: ${.OBJDIR} ${OBJDIR}/systemd.reloaded ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}
 .endfor
 
 # reloading systemctl if any files were changed
-systemd: ${SYSTEMD_FILES}
+${OBJDIR}/systemd.reloaded: ${SYSTEMD_FILES} _mark_command
 	systemctl daemon-reload
 
 FILES:=	${SYSTEMD_FILES}

@@ -2,12 +2,11 @@
 ZEST:=	${.PARSEDIR}
 
 # this for temporary files (and converting service restarts to tasks)
-MAKEOBJDIR:=	${.CURDIR}/obj.${USER}
-.OBJDIR: ${MAKEOBJDIR}
+.OBJDIR: ${.CURDIR}/obj.${USER}
 
 # This one ensures files will be overwritten even if local configuration is newer
-LAST_UPDATE:=	${MAKEOBJDIR}/last.update
-${LAST_UPDATE}! ${MAKEOBJDIR}
+LAST_UPDATE:=	${.OBJDIR}/last.update
+${LAST_UPDATE}! ${.OBJDIR}
 	touch $@
 
 .SILENT:
@@ -51,8 +50,8 @@ _make_dir: .USEBEFORE
 	echo '# new dir $@'; \
 	${INSTALL_DIR} $@
 
-.for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${MAKEOBJDIR}
-.	if !exists(${DIR})
+.for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${.OBJDIR}
+.	if !exists(DIR)
 ${DIR}: _make_dir
 TARGETS+=	${DIR}
 .	endif

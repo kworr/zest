@@ -11,14 +11,16 @@ ${SERVICE_NGINX}: \
 	/var/ca/dhparam.pem \
 	${NGINX_SITES:%=${NGINX_ETC}/local/%.conf} \
 	${NGINX_CONFIGS:%=${NGINX_ETC}/%.conf} \
-	${NGINX_MAINT:%=${NGINX_ETC}/maintenance/%.html}
+	${NGINX_MAINT:%=${NGINX_ETC}/maintenance/%.html} \
+	${NGINX_DIRS}
 
 _nginx_reload: .USE
 	nginx -t && nginx -s reload
 
-/var/ca: _make_dir
-${NGINX_ETC}/local: _make_dir
-${NGINX_ETC}/maintenance: _make_dir
+NGINX_DIRS:= /var/ca ${NGINX_ETC}/local ${NGINX_ETC}/maintenance
+fir DIR in ${NGINX_DIRS}
+${DIR}: _make_dir
+.endfor
 
 FILES:=	${NGINX_CONFIGS:%=%.conf}
 DEST:=	${NGINX_ETC}
@@ -37,5 +39,6 @@ ${NGINX_ETC}/maintenance/${PAGE}.html: nginx/${PAGE}.html ${NGINX_ETC}/maintenan
 
 STALE_FILES+= ${INSTALLED:C|^.+$|${NGINX_ETC}/local/&.conf|g}
 
-/var/ca/dhparam.pem: /var/ca
+/var/ca/dhparam.pem:
 	openssl dhparam -dsaparam -out $@ 4096
+.ORDER: /var/ca /var/ca/dhparam.pem
