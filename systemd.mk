@@ -22,16 +22,19 @@ SYSTEMD_FILES+=	${SERVICE_FILES}
 # and creating a class for each service, it's up module to properly integrate
 # that class with other configuration files
 SYSTEMD_SERVICE_${SERVICE_NAME:tu}:=	${.OBJDIR}/${SERVICE_NAME}.systemd
-${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}: ${.OBJDIR}/systemd.reloaded ${SERVICE_FILES} _mark_command
+${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}: ${SERVICE_FILES} _mark_command
 .	for SERVICE_CMD in ${SERVICE_CMDS}
 	systemctl ${SERVICE_CMD} ${SERVICE:C|=| |:[1]:S|:| |g:[1]}
 .	endfor
+.ORDER: ${.OBJDIR}/systemd.reloaded ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}
 .endfor
 
 # reloading systemctl if any files were changed
 ${OBJDIR}/systemd.reloaded: ${SYSTEMD_FILES} _mark_command
 	systemctl daemon-reload
 .ORDER: ${.OBJDIR} ${OBJDIR}/systemd.reloaded
+
+systemd: ${.OBJDIR}/systemd.reloaded
 
 FILES:=	${SYSTEMD_FILES}
 .include "${ZEST}/_copy_files.mk"
