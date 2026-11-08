@@ -1,6 +1,4 @@
-NEWSYSLOG_TARGETS:=	${NEWSYSLOG_FILES:T:%.newsyslog=${NEWSYSLOG_DIR}/%.conf}
-
-newsyslog: ${NEWSYSLOG_TARGETS}
+newsyslog: ${NEWSYSLOG_FILES:T:%.newsyslog=${NEWSYSLOG_DIR}/%.conf}
 
 .for FILE in ${NEWSYSLOG_FILES}
 TARGET_FILE=	${FILE:T:%.newsyslog=${NEWSYSLOG_DIR}/%.conf}

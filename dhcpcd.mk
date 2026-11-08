@@ -1,12 +1,8 @@
-DHCPCD_FILES:=	/usr/local/etc/dhcpcd.conf
+DHCPCD_FILES+=	/usr/local/etc/dhcpcd.conf
 
-.include "${ZEST}/_import.mk"
+dhcpcd: ${SERVICE_DHCPCD}
 
-dhcpcd: ${DHCPCD_COMMAND}
-
-${DHCPCD_COMMAND}: \
-	${DHCPCD_FILES}
-	service dhcpcd restart
+${SERVICE_DHCPCD}: ${DHCPCD_FILES}
 
 FILES:=	${DHCPCD_FILES}
 .include "${ZEST}/_copy_files.mk"

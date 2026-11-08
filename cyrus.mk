@@ -1,12 +1,10 @@
-CYRUS_ETC=/usr/local/etc
+CYRUS_ETC?=	/usr/local/etc
 
-CYRUS_FILES:=	imapd.conf cyrus.conf
+CYRUS_FILES+=	imapd.conf cyrus.conf
 
-cyrus: ${IMAPD_COMMAND}
+cyrus: ${SERVICE_IMAPD}
 
-${IMAPD_COMMAND}: \
-	${CYRUS_FILES:%=${CYRUS_ETC}/%}
-	service imapd restart
+${SERVICE_IMAPD}: ${CYRUS_FILES:%=${CYRUS_ETC}/%}
 
 FILES:=	${CYRUS_FILES}
 DEST:=	${CYRUS_ETC}

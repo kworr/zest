@@ -2,12 +2,11 @@
 ZEST:=	${.PARSEDIR}
 
 # this for temporary files (and converting service restarts to tasks)
-MAKEOBJDIR:=	${.CURDIR}/obj.${USER}
-.OBJDIR: ${MAKEOBJDIR}
+.OBJDIR: ${.CURDIR}/obj.${USER}
 
 # This one ensures files will be overwritten even if local configuration is newer
-LAST_UPDATE:=	${MAKEOBJDIR}/last.update
-${LAST_UPDATE}! ${MAKEOBJDIR}
+LAST_UPDATE:=	${.OBJDIR}/last.update
+${LAST_UPDATE}! ${.OBJDIR}
 	touch $@
 
 .SILENT:
@@ -16,11 +15,18 @@ TARGETS:=
 .include "_config.mk"
 .sinclude "${.CURDIR}/_config.mk"
 
+.if !empty(MYHOST:C|[a-zA-Z0-9-]*||)
+.	error "only FQDN hostnames are supported."
+.endif
+
 .MAKE.JOBS?=1
 .if !empty(.MAKE.MODE:Mcompat)
 .error "ERROR: Zest doesn't support "compat" mode."
 .endif
 
+# This means the target is a path to file under OBJDIR, and should be bumped
+# makes current target a one-shot command, that will be executed when any deps
+# change
 _mark_command: .USE
 	touch $@
 
@@ -33,12 +39,18 @@ _text_file: .USEBEFORE ${LAST_UPDATE}
 	${INSTALL} ${>:[1]} $@
 
 _link_file: .USEBEFORE ${LAST_UPDATE}
+	if [ -f $@ ]; then \
+		ls -la $@; \
+	else \
+		echo '# new link $@'; \
+	fi
 	${INSTALL} -lsa ${>:[1]} $@
 
 _make_dir: .USEBEFORE
+	echo '# new dir $@'; \
 	${INSTALL_DIR} $@
 
-.for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${MAKEOBJDIR}
+.for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${.OBJDIR}
 .	if !exists(${DIR})
 ${DIR}: _make_dir
 TARGETS+=	${DIR}
@@ -53,47 +65,71 @@ SUBDIR:=	${.TARGETS}
 SUBDIR:=	user
 .endif
 
+#### Global configuration
 # for `root` - add default modules and then include host config
-.if !empty(:!whoami!:Mroot)
+# also we are populating ${MYTAGS}
+.if empty(USER:Nroot) && empty(.TARGETS)
 .	include "${.CURDIR}/_default.mk"
-.	sinclude "${.CURDIR}/_${MYHOST}.mk"
+.		for TAGLINE in ${TAGS}
+THIS_HOST:=	${TAGLINE:C|.*=||:S|,| |g:M${MYHOST}}
+.			if !empty(THIS_HOST)
+MYTAGS+=	${TAGLINE:C|=.*||}
+.			endif
+.		endfor
+.		sinclude "${.CURDIR}/_${MYHOST}.mk"
+.	for TAG in ${MYTAGS}
+.		sinclude "${.CURDIR}/@${TAG}.mk"
+.	endfor
 .endif
 
+# now we are making SUBDIR empty for second pass, where modules can declare
+# depends, this time it's order is precious, as, for example, services should
+# populate variables before the module is referencing those targets
+UNORDERED_SUBDIR:=	${SUBDIR}
+SUBDIR:=
+
+#### Per module configuration
 # import var defines, this is for crossdependencies, when some file is for other
 # service, and should be hadles correctly elsewhere
-.for DIR in ${SUBDIR}
-.	if exists(Mk/${DIR}.var.mk)
-.		include "Mk/${DIR}.var.mk"
-.	elif exists(${ZEST}/${DIR}.var.mk)
-.		include "${ZEST}/${DIR}.var.mk"
+.for MOD in ${UNORDERED_SUBDIR:O:u}
+MOD:=	${MOD} # for include visibility
+.	if exists(Mk/${MOD}.var.mk)
+.		include "Mk/${MOD}.var.mk"
+.	elif exists(${ZEST}/${MOD}.var.mk)
+.		include "${ZEST}/${MOD}.var.mk"
 .	endif
+.	-include "${.CURDIR}/${MOD}/_default.mk"
+.	-include "${.CURDIR}/${MOD}/_${MYHOST}.mk"
+.	for TAG in ${MYTAGS}
+.		-include "${.CURDIR}/${MOD}/@${TAG}.mk"
+.	endfor
+SUBDIR+=	${MOD}
 .endfor
 
-# precreate commands, should be split in separate step if more then one module
-# would require to precreate some targets based on vars
-.for COMMAND in ${COMMANDS}
-${COMMAND:tu}_COMMAND:=	${MAKEOBJDIR}/${COMMAND}.restarted
-${${COMMAND:tu}_COMMAND}: _mark_command
-.ORDER: ${MAKEOBJDIR} ${${COMMAND:tu}_COMMAND}
-.endfor
+# Now SUBDIR can refer to other modules twice, but we don't need to include
+# them more then once, and we olready have them in a working order, so we just
+# skipping duplicates
+INCLUDED:=
 
 # now the part that actually defines dependencies based on collected
 # configuration
-.for DIR in ${SUBDIR}
-MOD:=	${DIR}
-.	if exists(Mk/${DIR}.mk)
-.		include "Mk/${DIR}.mk"
-TARGETS+=	${DIR}
-.PHONY: ${DIR}
-.	elif exists(${ZEST}/${DIR}.mk)
-.		include "${ZEST}/${DIR}.mk"
-TARGETS+=	${DIR}
-.PHONY: ${DIR}
-.	else
-.		warning 'Module "${DIR}" not found.'
+.for MOD in ${SUBDIR}
+.	if empty(INCLUDED:M${MOD})
+MOD:=	${MOD} # for include visibility
+.		if exists(Mk/${MOD}.mk)
+.			include "Mk/${MOD}.mk"
+TARGETS+=	${MOD}
+.		elif exists(${ZEST}/${MOD}.mk)
+.			include "${ZEST}/${MOD}.mk"
+TARGETS+=	${MOD}
+.		else
+.			warning 'Module "${MOD}" not found.'
+.		endif
+INCLUDED+=	${MOD}
 .	endif
 .endfor
 
+.PHONY: ${TARGETS}
 .MAIN: ${TARGETS}
 
 clean_stale: clean_files clean_dirs

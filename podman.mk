@@ -1,7 +1,5 @@
-PODMAN_CONTAINERS=
-PODMAN_FILES=	/usr/local/etc/containers/containers.conf
-
-.include "${ZEST}/_import.mk"
+PODMAN_CONTAINERS?=
+PODMAN_FILES+=	/usr/local/etc/containers/containers.conf
 
 .for STACK in ${PODMAN_CONTAINERS}
 .	if exists(${MOD}/${STACK})
@@ -16,9 +14,11 @@ ${MOD}_${STACK}: .PHONY
 .	endif
 .endfor
 
-podman: ${PODMAN_SERVICE_COMMAND} .WAIT ${PODMAN_TARGETS}
-${PODMAN_SERVICE_COMMAND}: ${PODMAN_FILES}
-	service podman_service restart
+podman: ${PODMAN_TARGETS}
+
+${PODMAN_TARGETS}: ${SERVICE_PODMAN_SERVICE}
+
+${SERVICE_PODMAN_SERVICE}: ${PODMAN_FILES}
 
 FILES:=	${PODMAN_FILES}
 .include "${ZEST}/_copy_files.mk"

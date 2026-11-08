@@ -1,18 +1,13 @@
-OPENDKIM_ETC=/usr/local/etc/mail
-OPENDKIM_DB=/var/db/dkim
+OPENDKIM_ETC?=	/usr/local/etc/mail
+OPENDKIM_DB?=	/var/db/dkim
 
-OPENDKIM_TABLES=KeyTable SigningTable TrustedHosts
+OPENDKIM_TABLES+=	KeyTable SigningTable TrustedHosts
 
-.include "${ZEST}/_import.mk"
+opendkim: ${SERVICE_MILTER-OPENDKIM} ${OPENDKIM_DB} ${OPENDKIM_ETC}
 
-opendkim: ${OPENDKIM_COMMAND}
-
-${OPENDKIM_COMMAND}: \
+${SERVICE_MILTER-OPENDKIM}: \
 	${OPENDKIM_ETC}/opendkim.conf \
 	${OPENDKIM_TABLES:%=${OPENDKIM_DB}/%}
-	service milter-opendkim restart
-
-${OPENDKIM_DB}: _make_dir
 
 FILES:=	${OPENDKIM_ETC}/opendkim.conf
 .include "${ZEST}/_copy_files.mk"

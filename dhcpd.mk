@@ -1,12 +1,8 @@
-DHCPD_FILES:=	/usr/local/etc/dhcpd.conf
+DHCPD_FILES+=	/usr/local/etc/dhcpd.conf
 
-.include "${ZEST}/_import.mk"
+dhcpd: ${SERVICE_ISC-DHCPD}
 
-dhcpd: ${DHCPD_COMMAND}
-
-${DHCPD_COMMAND}: \
-	${DHCPD_FILES}
-	service isc-dhcpd restart
+${SERVICE_ISC-DHCPD}: ${DHCPD_FILES}
 
 FILES:=	${DHCPD_FILES}
 .include "${ZEST}/_copy_files.mk"

@@ -9,26 +9,32 @@
 .error MOD unset, need to know module
 .endif
 
-.if empty(DEST)
-.	for FILE in ${FILES}
-.		if exists(${.CURDIR}/${MOD}/${MYHOST}/${FILE:T})
-${FILE}: ${.CURDIR}/${MOD}/${MYHOST}/${FILE:T} _text_file
-.		else
-${FILE}: ${.CURDIR}/${MOD}/${FILE:T} _text_file
-.		endif
-.ORDER: ${FILE:H} ${FILE}
+.for FILE in ${FILES}
+.	if empty(DEST)
+MYDEST:=	${FILE:H}
+MYFILE:=	${FILE:T}
+.	else
+MYDEST:=	${DEST}
+MYFILE:=	${FILE}
+.	endif
+${MYDEST}: _make_dir
+ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
+.	for TAG in ${MYTAGS}
+ITEM_LIST+=	${.CURDIR}/${MOD}/@${TAG}/${MYFILE}
 .	endfor
-.else
-.	for FILE in ${FILES}
-.		if exists(${.CURDIR}/${MOD}/${MYHOST}/${FILE})
-${DEST}/${FILE}: ${.CURDIR}/${MOD}/${MYHOST}/${FILE} _text_file
-.		else
-${DEST}/${FILE}: ${.CURDIR}/${MOD}/${FILE} _text_file
+ITEM_LIST+=	${.CURDIR}/${MOD}/${MYFILE}
+FOUND:=
+.	for ITEM in ${ITEM_LIST}
+.		if empty(FOUND) && exists(${ITEM})
+FOUND:=	found
+${MYDEST}/${MYFILE}: ${ITEM} _text_file
+.ORDER: ${MYDEST} ${MYDEST}/${MYFILE}
 .		endif
-.ORDER: ${DEST}/${FILE} ${DEST}
 .	endfor
-.endif
+.	if empty(FOUND)
+.		error No variants found for ${MYFILE} in ${.CURDIR}/${MOD}
+.	endif
+.endfor
 
 # reset all variables that can change inside module
-DEST:=
-FILES:=
+.undef DEST FILES FOUND ITEM_LIST MYDEST MYFILE

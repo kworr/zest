@@ -1,3 +1,4 @@
 SYSLOG_FILES+=	cyrus/news.syslog
 NEWSYSLOG_FILES+=	cyrus/news.newsyslog
-COMMANDS+=	imapd
+SERVICES+=	imapd:restart
+SUBDIR+=	service

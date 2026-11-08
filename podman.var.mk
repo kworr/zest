@@ -1,1 +1,2 @@
-COMMANDS+=	podman_service
+SERVICES+=	podman_service:restart
+SUBDIR+=	service

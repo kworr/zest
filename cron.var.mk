@@ -1,1 +1,2 @@
-COMMANDS+=	cron
+SERVICES+=	cron:restart
+SUBDIR+=	service

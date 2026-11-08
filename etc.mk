@@ -1,13 +1,15 @@
-ETC_FILES:=	\
+ETC_FILES+=	\
 	/etc/csh.cshrc \
 	/etc/motd.template \
 	/etc/periodic.conf \
 	/etc/periodic.local
-ETC_FILES_RESOLVCONF:=	/etc/resolvconf.conf
+ETC_FILES_RESOLVCONF+=	/etc/resolvconf.conf
 
-etc: ${ETC_FILES} ${ETC_RESOLVCONF_COMMAND}
+etc: ${ETC_FILES} ${SERVICE_RESOLVCONF}
 
-${ETC_RESOLVCONF_COMMAND}: ${ETC_FILES_RESOLVCONF}
+${SERVICE_RESOLVCONF}: ${ETC_FILES_RESOLVCONF}
+
+_etc_resolvconf: .USE
 	resolvconf -u
 
 FILES:=	${ETC_FILES} ${ETC_FILES_RESOLVCONF}
