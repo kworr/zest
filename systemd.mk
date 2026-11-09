@@ -1,7 +1,7 @@
 # The way to manage systemd services: installing, updating, reloading, restarting
 #
 # SYSTEMD_SERVICES syntax is:
-# <service>:(restart|reload|enable|disable|stop)=/etc/systemd/system/files.service,/other/file
+# <service>:(restart|reload|enable|disable|stop)=module:/etc/systemd/system/files.service,/other/file
 #
 # Later definitely need to process all of that better
 
@@ -15,10 +15,17 @@ SERVICE_DEF:=	${SERVICE_TUPLE:[1]:S|:| |g}
 SERVICE_NAME:=	${SERVICE_DEF:[1]}
 # everything else are systemctl commands
 SERVICE_CMDS:=	${SERVICE_DEF:[2..-1]}
+# if we have something after = that's files
+SYSTEMD_FILES:=
+.	if !empty(SERVICE_TUPLE:[2])
+# before the files there's a module name to search for those files
+SERVICE_DEPS:=	${SERVICE_TUPLE:[2]:S|:| |g}
+SERVICE_MODULE:=	${SERVICE_DEPS:[1]}
 # if we had = everything after that is comma separated list of files
-SERVICE_FILES:=	${SERVICE_TUPLE:[2]:S|,| |g}
+SERVICE_FILES:=	${SERVICE_DEPS:[2]:S|,| |g}
 # adding those to global list (for reload and copying)
-SYSTEMD_FILES+=	${SERVICE_FILES}
+SYSTEMD_FILES:=	${SERVICE_FILES}
+.	endif
 # and creating a class for each service, it's up module to properly integrate
 # that class with other configuration files
 SYSTEMD_SERVICE_${SERVICE_NAME:tu}:=	${.OBJDIR}/${SERVICE_NAME}.systemd
@@ -27,14 +34,16 @@ ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}: ${SERVICE_FILES} _mark_command
 	systemctl ${SERVICE_CMD} ${SERVICE:C|=| |:[1]:S|:| |g:[1]}
 .	endfor
 .ORDER: ${.OBJDIR}/systemd.reloaded ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}
+.	if !empty(SYSTEMD_FILES)
+FILES:=	${SYSTEMD_FILES}
+MOD:=	${SERVICE_MODULE}
+.		include "${ZEST}/_copy_files.mk"
+.	endif
 .endfor
 
 # reloading systemctl if any files were changed
-${OBJDIR}/systemd.reloaded: ${SYSTEMD_FILES} _mark_command
+${.OBJDIR}/systemd.reloaded: ${SYSTEMD_FILES} _mark_command
 	systemctl daemon-reload
-.ORDER: ${.OBJDIR} ${OBJDIR}/systemd.reloaded
+.ORDER: ${.OBJDIR} ${.OBJDIR}/systemd.reloaded
 
 systemd: ${.OBJDIR}/systemd.reloaded
-
-FILES:=	${SYSTEMD_FILES}
-.include "${ZEST}/_copy_files.mk"
