@@ -9,6 +9,7 @@ postgres: \
 
 ${PAM_DIR}/postgres: postgres/postgres.pam _text_file
 
+NEW_DIRS+=	${POSTGRES_ETC}
 FILES:=	${POSTGRES_CONFIGS:%=%.conf}
 DEST:=	${POSTGRES_ETC}
 .include "${ZEST}/_copy_files.mk"
