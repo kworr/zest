@@ -22,7 +22,7 @@ USER!=	whoami
 
 .if ${OS} == "Linux"
 .MAKE.JOBS!=	nproc
-.elif ${OS} == "FreeBSD"
+.elif ${OS} == "FreeBSD" || "DragonFly"
 .MAKE.JOBS!=	sysctl -n hw.ncpu
 NEWSYSLOG_DIR:=	/usr/local/etc/newsyslog.conf.d
 SYSLOG_DIR:=	/usr/local/etc/syslog.d
