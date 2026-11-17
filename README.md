@@ -164,10 +164,11 @@ FILES:= nginx.conf=644 \
         helper.sh=755
 ```
 
-Omitted trailing fields inherit `FILE_MODE`, `FILE_OWNER`, `FILE_GROUP`
-(defaults: `644`, empty, empty). The mode must be explicit when you specify
-owner or group; an empty leading field (`=:root:wheel`) is not supported.
-Paths cannot contain `=`.
+Omitted or empty fields inherit `FILE_MODE`, `FILE_OWNER`, `FILE_GROUP`
+(defaults: `644`, empty, empty) — including at the start:
+`private.key=:root:wheel` means "default mode, root, wheel", and
+`helper.sh=700::wheel` means "700, default owner, wheel". Paths cannot
+contain `=`.
 
 `_copy_files.mk` looks up the source using the selector order above, emits the
 install rule (through the `_text_file` helper), and adds an `.ORDER` edge from
@@ -315,7 +316,7 @@ CYRUS_ETC?= /usr/local/etc
 
 CYRUS_FILES+= imapd.conf cyrus.conf
 
-cyrus: ${SERVICE_IMAPD}
+cyrus: ${SERVICE_IMAPD} ${CYRUS_ETC}
 
 ${SERVICE_IMAPD}: ${CYRUS_FILES:%=${CYRUS_ETC}/%}
 
@@ -324,6 +325,11 @@ FILES:=     ${CYRUS_FILES}
 DEST:=      ${CYRUS_ETC}
 .include "${ZEST}/_copy_files.mk"
 ```
+
+Note that the module target also names its destination directory: a
+targeted run (`make cyrus`) only builds directories it can reach, so the
+directory must appear on the module target (or a prerequisite of it), not
+on the service marker.
 
 and `cyrus.var.mk`:
 

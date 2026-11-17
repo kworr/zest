@@ -11,7 +11,7 @@ behaviours it relies on, and the traps found while adding per-file and
 per-directory `mode:owner:group` support.
 
 - Verified on FreeBSD, `MAKE_VERSION 20251111`, against Fossil checkout
-  `79a51e66` (2026-11-17). Line numbers will drift; re-read the files
+  `6e5c13a3` (2026-11-17). Line numbers will drift; re-read the files
   before trusting them.
 - Requires BSD make semantics. It is **not** GNU make compatible (uses
   `!=` instead of `$(shell)`, plus `.MAIN`, `.ORDER`, `:U`, `.for` text
@@ -272,14 +272,14 @@ path[=mode[:owner[:group]]]
 - The first `=` separates path from attributes. Paths therefore cannot
   contain `=` (unsupported).
 - Attributes are positional: `mode`, then `owner`, then `group`.
-- Omitted **trailing** fields inherit `FILE_MODE`, `FILE_OWNER`,
-  `FILE_GROUP`.
-- Empty **leading** fields (`=:root:wheel` for "default mode, root
-  owner") are still not representable: word splitting drops them, so
-  `=:root:wheel` parses `root` as the mode and `wheel` as the owner.
-  Trailing empties (`700:root:` / `700::wheel`) are fine because
-  `:C|:| |g` keeps the cursor at the last field. See
-  [Known issues and design traps](#known-issues-and-design-traps).
+- Any field may be omitted or empty; each missing/empty field inherits
+  `FILE_MODE`, `FILE_OWNER`, `FILE_GROUP`. Empty *leading* and *middle*
+  fields are handled with a `_` sentinel:
+  `:S|^:|_:|`, then `:S|::|:_:|g` (twice, so `::wheel` also works), then
+  `:C|:| |g`. Verified: `=:root:wheel` → default mode, root owner, wheel
+  group; `700::wheel` → `-m 700 -g wheel`; `::wheel` → `-g wheel` only.
+  A field whose value is *exactly* `_` is indistinguishable from the
+  sentinel and would be dropped (not a realistic owner/group/mode).
 - No spaces inside a spec (bmake splits `FILES` on whitespace).
 - With `DEST` unset, the destination is the file's own path: `FILES:=
   /etc/foo` installs to `/etc/foo` and uses the basename for source
@@ -290,34 +290,42 @@ path[=mode[:owner[:group]]]
 `_copy_files.mk` generates, per file:
 
 ```make
-${THIS}: INST_MODE=<attr-or-empty> ${FILE_MODE}
-${THIS}: INST_OWNER=<attr-or-empty> ${FILE_OWNER}
-${THIS}: INST_GROUP=<attr-or-empty> ${FILE_GROUP}
+FILE_ARGS:= ${FILE_SPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
+# each of the following is emitted only when the field is not `_`:
+${THIS}_MODE:=   <mode>
+${THIS}_OWNER:=  <owner>
+${THIS}_GROUP:=  <group>
 ${THIS}: <source> _text_file
 .ORDER: <destdir> ${THIS}
 ```
 
-`${THIS}` is the destination. The local variables are consumed by
-`_text_file` as `${INST_MODE:[1]}` etc. This is a bmake idiom worth
-remembering:
+`${THIS}` is the destination. Attributes are propagated as **global
+variables named after the destination path** (`/etc/foo.conf_MODE`); the
+helpers build the name at recipe time with `${$@_MODE:U...}` (target
+indirection). Because a variable is simply *not defined* when an attr is
+absent, the `:U` fallback to `FILE_MODE`/`FILE_OWNER`/`FILE_GROUP`
+works cleanly — this scheme exists to avoid the
+"defined-but-empty defeats `:U`" trap of the old target-local
+`INST_MODE` idiom. Consequences:
 
-```make
-VAR=   <value> <fallback>
-${VAR:[1]}      # value when non-empty, otherwise the fallback word
-```
-
-It avoids `${VAR:U...}`, which does **not** fall back for a variable that
-is defined but empty.
+- The globals are set at parse time and live for the whole run (never
+  `.undef`ed); two files mapping to the same destination with different
+  attrs silently use the last parsed one.
+- Path characters (`/`, `.`, `-`) are legal in bmake variable names, so
+  destination paths work as prefixes.
+- The `:N_` guard (`.if ${FILE_ARGS:[1]:N_}`) evaluates the field with
+  underscores stripped: real values are non-empty → defined; the
+  sentinel `_` and absent fields are empty → not defined.
 
 The macro can be included more than once per module (e.g.
 `opendkim.mk`); it resets `FILES`, `DEST`, `FOUND`, `ITEM_LIST`,
-`MYDEST`, `MYFILE`, `FILE_SPEC`, `THIS`, `FILE_ARGS`, but **not**
-`MOD`. Set `MOD` again only when installing files that belong to a
-different module (as `systemd.mk` does).
+`MYDEST`, `MYFILE`, `THIS`, `FILE_ARGS`, but **not** `MOD`. Set `MOD`
+again only when installing files that belong to a different module (as
+`systemd.mk` does).
 
 The loop variable is `FSPEC`; the parsed value goes into `FILE_SPEC`
-(`FILE_SPEC:= ${FSPEC:C|=| |}`), and the attrs are split with
-`:C|:| |g`. Never assign back to the loop variable — see
+(`FILE_SPEC:= ${FSPEC:C|=| |}` — one `=` only). Never assign back to the
+loop variable — see
 [.for is textual substitution](#for-is-textual-substitution).
 
 Source lookup is done with parse-time `exists()` checks and produces a
@@ -340,14 +348,11 @@ Rules:
 
 - The payload source must be **first**; `${>:[1]}` is `.ALLSRC:[1]`.
 - Use `.ORDER` for the destination dir, never a real prerequisite.
-- `INST_MODE`/`INST_OWNER`/`INST_GROUP` may be set target-locally. If
-  they are not, `_text_file` falls back to
-  `FILE_MODE`/`FILE_OWNER`/`FILE_GROUP` via `${INST_MODE:[1]:U${FILE_MODE}:...}`.
-  Note the subtlety: `:U` fires only when the variable is entirely
-  undefined. An explicit `INST_MODE=` target-local assignment defines it
-  as *empty*, so `${INST_MODE:[1]:U644}` still yields empty and
-  `install` uses its own default `0755`. Do not emit an empty local
-  assignment unless you mean "no `-m`".
+- To override attributes, define the **global** destination-named
+  variables, e.g. `${MY_ETC}/foo.conf_MODE:= 600`. If they are not
+  defined, `_text_file` falls back to `FILE_MODE`/`FILE_OWNER`/`FILE_GROUP`
+  via `${$@_MODE:U${FILE_MODE}...}`. Do not define them as empty — an
+  empty value is defined, so `:U` will not fire.
 - Keep the rule next to its `.ORDER` so the ordering is obvious.
 
 ## Directories: `NEW_DIRS`
@@ -362,7 +367,8 @@ NEW_DIRS+=  ${MY_ETC}=750:root:wheel
 
 Directories are processed **after** module aggregation, so declarations
 can happen anywhere. Syntax is `path[=mode[:owner[:group]]]`, with
-`DIR_MODE`/`DIR_OWNER`/`DIR_GROUP` as defaults.
+`DIR_MODE`/`DIR_OWNER`/`DIR_GROUP` as defaults; any field may be empty
+(same `_`-sentinel handling as files).
 
 What the pass does (`_zest.mk`):
 
@@ -370,11 +376,12 @@ What the pass does (`_zest.mk`):
 .for DSPEC in ${NEW_DIRS:O:u}
     DIRSPEC:= ${DSPEC:C|=| |}
     THIS:= ${DIRSPEC:[1]}
-    DIR_INST:= ${DIRSPEC:[2]:C|:| |g}
+    DIR_ARGS:= ${DIRSPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
+    # define ${THIS}_MODE/_OWNER/_GROUP when not the `_` sentinel
     TARGET_DIRS:= ${TARGET_DIRS} ${THIS}    # immediate, not +=
-    ... define ${THIS}: INST_MODE=... _make_dir
+    ${THIS}: _make_dir
 .endfor
-.undef _ZEST_SEEN_DIRS THIS DIRSPEC
+.undef _ZEST_SEEN_DIRS THIS DIRSPEC DIR_ARGS
 ```
 
 and `.MAIN: ${TARGETS} ${TARGET_DIRS}`. Every declared directory is a
@@ -500,11 +507,18 @@ target):
 ```make
 if [ -f $@ ]; then diff -u $@ ${>:[1]} || true; else echo '# new file $@'; fi
 install -C \
-    ${INST_MODE:[1]:U${FILE_MODE}:@x@-m ${x}@} \
-    ${INST_OWNER:[1]:U${FILE_OWNER}:@x@-o ${x}@} \
-    ${INST_GROUP:[1]:U${FILE_GROUP}:@x@-g ${x}@} \
+    ${$@_MODE:U${FILE_MODE}:@x@-m ${x}@} \
+    ${$@_OWNER:[1]:U${FILE_OWNER}:@x@-o ${x}@} \
+    ${$@_GROUP:[1]:U${FILE_GROUP}:@x@-g ${x}@} \
     ${>:[1]} $@
 ```
+
+The `${$@_MODE}` form builds the variable name from the target path at
+recipe time. A value only exists if the rule (or a manual rule) defined
+that exact global, so `:U` supplies the default otherwise. Note the
+subtle asymmetry: `_text_file` uses `${$@_MODE:U…}` while `_make_dir` and
+the OWNER/GROUP lines add a `:[1]` first — both work for single-word
+values.
 
 `_link_file` uses `install -lsa` (absolute symbolic link).
 
@@ -513,9 +527,9 @@ install -C \
 ```make
 if [ ! -d $@ ]; then echo "# new dir $@"; fi
 ${INSTALL} -d \
-    ${INST_MODE:[1]:U${DIR_MODE}:@x@-m ${x}@} \
-    ${INST_OWNER:[1]:U${DIR_OWNER}:@x@-o ${x}@} \
-    ${INST_GROUP:[1]:U${DIR_GROUP}:@x@-g ${x}@} \
+    ${$@_MODE:[1]:U${DIR_MODE}:@x@-m ${x}@} \
+    ${$@_OWNER:[1]:U${DIR_OWNER}:@x@-o ${x}@} \
+    ${$@_GROUP:[1]:U${DIR_GROUP}:@x@-g ${x}@} \
     $@
 ```
 
@@ -542,13 +556,10 @@ directories. The `if [ ! -d ]` only gates the log line.
   explicit `if (!dounpriv)` around the directory chmod). Regular files
   are still chmodded even with `-U`.
 - `install(1)` without `-m` defaults to `0755`; it does **not** preserve
-  the source mode. `_copy_files.mk` and `NEW_DIRS` always inject the
-  defaults, and `_text_file`/`_make_dir` fall back to
-  `FILE_MODE`/`DIR_MODE` when `INST_MODE` is entirely undefined, so
-  manual rules also get `0644`/`0755` rather than `install`'s `0755` for
-  files. A defined-but-empty `INST_MODE=` still slips through and
-  produces `-m ''`; see
-  [Known issues and design traps](#known-issues-and-design-traps).
+  the source mode. The helpers always emit `-m` from the
+  `FILE_MODE`/`DIR_MODE` default (or an explicit `<path>_MODE`), so a
+  manual rule with no attribute still installs `0644`/`0755`, not
+  `install`'s bare `0755`.
 - mtime resolution is one second on this filesystem. Tests that touch a
   directory and a file in the same second can look "up to date" even
   though the order was wrong; `sleep 1` between steps when reproducing.
@@ -768,38 +779,32 @@ Verified details of `.USE` inheritance:
 - `.PARSEDIR` is the directory of the makefile currently being parsed;
   `ZEST` is set from it inside `_zest.mk`.
 
-### `:U` and empty target-local variables
+### `:U`, target-derived names, and empty variables
 
-`${VAR:Ufallback}` applies only when `VAR` is undefined. A target-local
-assignment such as `${THIS}: INST_MODE=` defines it as empty, so `:U`
-does not kick in. That is why the code writes
+`${VAR:Ufallback}` applies only when `VAR` is undefined; a variable that
+is *defined but empty* does not trigger it. Zest leans on this rule in
+both directions:
 
-```make
-${THIS}: INST_MODE=${ATTR} ${FILE_MODE}
-...
-${INSTALL} ${INST_MODE:[1]:@x@-m ${x}@}
-```
+- **Only define when present.** The attr pass emits
+  `${THIS}_MODE:= <value>` solely when the field is not the `_`
+  sentinel, so "no attr" = "undefined" = clean `:U` fallback to
+  `FILE_MODE`/`DIR_MODE`.
+- **Sub-modifiers apply to both branches.**
+  `${VAR:U644:@x@-m ${x}@}` yields `-m <value>` when `VAR` is defined
+  and `-m 644` when it is not — the `:@x@` runs after the `:U`, on
+  whichever result you get. Verified.
+- **The name may contain `$@`.** `${$@_MODE:U…}` builds the variable
+  name from the target path at recipe time (target indirection). Path
+  characters (`/`, `.`, `-`) are legal in variable names.
 
-and picks the first word instead of using `:U`. Do not "simplify" this
-back to `${INST_MODE:U${FILE_MODE}}` unless you also stop emitting the
-empty local assignment.
-
-The helpers add a `:U` fallback *inside* the macro:
-
-```make
-${INSTALL} ${INST_MODE:[1]:U${FILE_MODE}:@x@-m ${x}@} ...
-```
-
-This helps only for targets where `INST_MODE` is **undefined** (manual
-`_text_file` rules that do not set it). It does **not** help for
-`${THIS}: INST_MODE=` (defined-but-empty), where `${INST_MODE:[1]}` is
-empty and `:U` is skipped. Verified:
-
-| case | `${INST_MODE:[1]:U644}` |
+| case | `${$@_MODE:U644:@x@-m ${x}@}` |
 |---|---|
-| variable never defined | `644` |
-| `INST_MODE=<attr> 644` (from `_copy_files.mk`) | `<attr>` if present, else `644` |
-| target-local `INST_MODE=` | `` (empty → `install -m ''` fails) |
+| `<path>_MODE` undefined | `-m 644` |
+| `<path>_MODE:= 600` | `-m 600` |
+| `<path>_MODE:=` (empty) | `` (empty → no `-m` at all) |
+
+So never define a `<path>_MODE`/`_OWNER`/`_GROUP` variable empty; omit
+it instead.
 
 Also note that the value in a target-local assignment is expanded when
 the dependency line is read (the rest of the line already has globals
@@ -817,55 +822,59 @@ commands inherited from `.USE`/`.USEBEFORE` sources.
 
 ## Known issues and design traps
 
-Current checkout: `79a51e66` (2026-11-17). Line numbers will drift;
+Current checkout: `6e5c13a3` (2026-11-17). Line numbers will drift;
 re-read the files. These are behaviours to design around, not a bug list.
 
-1. **Empty leading attribute fields are lost.**
-   `foo.conf=:root:wheel` becomes words `root wheel`; `root` is taken as
-   the mode and `wheel` as the owner. There is no placeholder for an
-   omitted leading field, so make the mode explicit whenever owner/group
-   are used, or introduce a sentinel. Trailing empties (`700:root:` and
-   `700::wheel`) work.
-2. **Directory attrs are re-applied every run.** `_make_dir` inherits
+1. **Directory attrs are re-applied every run.** `_make_dir` inherits
    the forced `LAST_UPDATE`, so every declared directory's rule runs on
    each invocation and `install -d -m/-o/-g` (re-)applies the attrs. A
    declared directory converges to its `NEW_DIRS` spec — but only where
    it can actually chmod/chown (see "Directory attrs need privilege").
-3. **`install -d` creates missing parents.** Creating `/a/b` can
+2. **`install -d` creates missing parents.** Creating `/a/b` can
    pre-create `/a` with default attrs, but `install -d` does not chmod an
    *existing* parent and the declared `/a`'s rule is forced and runs in
    the same invocation, so the end state is correct. Only *undeclared*
    intermediate directories keep default attrs — declare them in
    `NEW_DIRS` to control them.
-4. **Targeted runs and directories.** `make <module>` ignores `.MAIN`,
+3. **Targeted runs and directories.** `make <module>` ignores `.MAIN`,
    and `.ORDER` does not add nodes, so only directories reachable from
    that module (or its service target) are built. Put them on the module
    target, never on a *file* rule. See
    [Directories as dependencies](#directories-as-dependencies-the-big-trap).
-5. **`INST_MODE=` (empty) defeats `:U`.** `${VAR:U...}` does nothing
-   when `VAR` is defined-but-empty. `_copy_files.mk` emits
-   `INST_MODE=<attr> ${FILE_MODE}` precisely so the first word is a real
-   value; do not "simplify" it to an empty local assignment plus `:U`.
-6. **Directory attrs need privilege.** The directory rule is forced, but
+   Note `user.mk` lists its files but not the parents of `USER_FILES` on
+   the `user` target, so `make user` assumes those parents exist (or are
+   reached via `USER_DIRS`).
+4. **Attribute globals are not cleaned up.** `${PATH}_MODE`/`_OWNER`/
+   `_GROUP` are defined at parse time, never `.undef`ed, and live for the
+   whole run. If two declarations install to the same destination with
+   different attrs, the last one parsed wins silently.
+5. **The `_` sentinel collision.** Empty fields are represented by `_`;
+   a literal value of exactly `_` (e.g. an owner named `_`) is
+   indistinguishable and would be dropped.
+6. **Stale `ZFLAGS` comment.** `_text_file`'s header comment still
+   mentions an "Extra source token ZFLAGS" that no mechanism implements.
+   Also `_text_file` uses `${$@_MODE:U…}` while the other attr lines use
+   `:[1]:U…` — harmless for single-word values, but inconsistent.
+7. **Directory attrs need privilege.** The directory rule is forced, but
    on non-root FreeBSD runs `INSTALL` includes `-U`, which skips chown
    and directory chmod (file chmod still happens). Directory
    mode/owner/group therefore converge only for root (or on Linux, which
    does not add `-U`).
-7. **Service `_`-macros run after the marker.** The marker target runs
+8. **Service `_`-macros run after the marker.** The marker target runs
    its plain `service ...` commands first, then `_mark_command`'s
    `touch $@`, then the `_`-macros. A failed plain command is retried; a
    failed `_`-macro leaves a fresh marker and is not retried until
    something else changes.
-8. **`example/` is stale.** `example/Mk/user.mk` still makes directories
+9. **`example/` is stale.** `example/Mk/user.mk` still makes directories
    prerequisites of files and uses `dir: _make_dir` directly;
    `example/Makefile` intentionally errors. Historical illustration
    only.
-9. **Last-update forcing and directory mtimes.** `LAST_UPDATE` makes
-   every managed file's recipe run each time; `install -C` then leaves
-   unchanged files' mtimes alone. Never add a directory as a *file*
-   prerequisite: a directory's mtime changes whenever entries are
-   added/removed, and `install -C` cannot "catch up", so the file looks
-   permanently out of date to any timestamp consumer.
+10. **Last-update forcing and directory mtimes.** `LAST_UPDATE` makes
+    every managed file's recipe run each time; `install -C` then leaves
+    unchanged files' mtimes alone. Never add a directory as a *file*
+    prerequisite: a directory's mtime changes whenever entries are
+    added/removed, and `install -C` cannot "catch up", so the file looks
+    permanently out of date to any timestamp consumer.
 
 ## Testing and debugging
 
