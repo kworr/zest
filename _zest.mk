@@ -161,7 +161,7 @@ ${THIS}_MODE:=	${DIR_ARGS:[1]}
 ${THIS}_OWNER:=	${DIR_ARGS:[2]}
 .	endif
 .	if ${DIR_ARGS:[3]:N_}
-${THIS}_GROUP:=	if ${DIR_ARGS:[3]}
+${THIS}_GROUP:=	${DIR_ARGS:[3]}
 .	endif
 TARGET_DIRS:=	${TARGET_DIRS} ${THIS}
 ${THIS}: _make_dir

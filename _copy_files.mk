@@ -32,7 +32,7 @@ ${THIS}_MODE:=	${FILE_ARGS:[1]}
 ${THIS}_OWNER:=	${FILE_ARGS:[2]}
 .	endif
 .	if ${FILE_ARGS:[3]:N_}
-${THIS}_GROUP:=	if ${FILE_ARGS:[3]}
+${THIS}_GROUP:=	${FILE_ARGS:[3]}
 .	endif
 
 ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
