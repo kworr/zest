@@ -118,6 +118,10 @@ TAGS:= \
 Format: `tag=host[,host...]`. The host list is comma-separated with no
 spaces. `MYTAGS` receives every tag whose list contains this host.
 
+Targeted runs, such as `make nginx`, do not read the root `_default.mk`.
+`MYTAGS` stays empty for these runs. Tag-specific module snippets are not
+loaded, and tag file variants may not be selected.
+
 Module configuration snippets follow the same pattern:
 
 - `<module>/_default.mk` — settings for all hosts

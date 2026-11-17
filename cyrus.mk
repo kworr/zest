@@ -2,7 +2,7 @@ CYRUS_ETC?=	/usr/local/etc
 
 CYRUS_FILES+=	imapd.conf cyrus.conf
 
-cyrus: ${SERVICE_IMAPD}
+cyrus: ${SERVICE_IMAPD} ${CYRUS_ETC}
 
 ${SERVICE_IMAPD}: ${CYRUS_FILES:%=${CYRUS_ETC}/%}
 

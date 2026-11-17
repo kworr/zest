@@ -21,8 +21,19 @@ MYFILE:=	${FILE_SPEC:[1]:T}
 MYDEST:=	${DEST}
 MYFILE:=	${FILE_SPEC:[1]}
 .	endif
+
 # resolve file attrs (mode:owner:group), empty/omitted fields inherit defaults
-FILE_ARGS:=	${FILE_SPEC:[2]:C|:| |g}
+FILE_ARGS:= ${FILE_SPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
+THIS:=	${MYDEST}/${MYFILE}
+.	if ${FILE_ARGS:[1]:N_}
+${THIS}_MODE:=	${FILE_ARGS:[1]}
+.	endif
+.	if ${FILE_ARGS:[2]:N_}
+${THIS}_OWNER:=	${FILE_ARGS:[2]}
+.	endif
+.	if ${FILE_ARGS:[3]:N_}
+${THIS}_GROUP:=	if ${FILE_ARGS:[3]}
+.	endif
 
 ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
 .	for TAG in ${MYTAGS}
@@ -33,10 +44,6 @@ FOUND:=
 .	for ITEM in ${ITEM_LIST}
 .		if empty(FOUND) && exists(${ITEM})
 FOUND:=	found
-THIS:=	${MYDEST}/${MYFILE}
-${THIS}: INST_MODE=${FILE_ARGS:[1]} ${FILE_MODE}
-${THIS}: INST_OWNER=${FILE_ARGS:[2]} ${FILE_OWNER}
-${THIS}: INST_GROUP=${FILE_ARGS:[3]} ${FILE_GROUP}
 ${THIS}: ${ITEM} _text_file
 .ORDER: ${MYDEST} ${THIS}
 .		endif
@@ -47,4 +54,4 @@ ${THIS}: ${ITEM} _text_file
 .endfor
 
 # reset all variables that can change inside module
-.undef DEST FILES FOUND ITEM_LIST MYDEST MYFILE FILE_SPEC THIS FILE_ARGS
+.undef DEST FILES FOUND ITEM_LIST MYDEST MYFILE THIS FILE_ARGS

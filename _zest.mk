@@ -38,16 +38,16 @@ _mark_command: .USE
 
 # Attr-aware helpers. Extra source token ZFLAGS="..." (pre-resolved install flags)
 # may be provided by generated rules; defaults preserve current behavior.
-# Accept local variables: INST_MODE, INST_OWNER, INST_GROUP
+# Accept global variables: $@_MODE, $@_OWNER, $@_GROUP
 _text_file: .USEBEFORE ${LAST_UPDATE}
 	if [ -f $@ ]; then \
 		diff -u $@ ${>:[1]} || true; \
 	else \
 		echo '# new file $@'; \
 	fi; \
-	${INSTALL} ${INST_MODE:[1]:U${FILE_MODE}:@x@-m ${x}@} \
-		${INST_OWNER:[1]:U${FILE_OWNER}:@x@-o ${x}@} \
-		${INST_GROUP:[1]:U${FILE_GROUP}:@x@-g ${x}@} \
+	${INSTALL} ${$@_MODE:U${FILE_MODE}:@x@-m ${x}@} \
+		${$@_OWNER:[1]:U${FILE_OWNER}:@x@-o ${x}@} \
+		${$@_GROUP:[1]:U${FILE_GROUP}:@x@-g ${x}@} \
 		${>:[1]} $@
 
 _link_file: .USEBEFORE ${LAST_UPDATE}
@@ -62,9 +62,9 @@ _make_dir: .USEBEFORE ${LAST_UPDATE}
 	if [ ! -d $@ ]; then \
 		echo "# new dir $@"; \
 	fi; \
-	${INSTALL} -d ${INST_MODE:[1]:U${DIR_MODE}:@x@-m ${x}@} \
-		${INST_OWNER:[1]:U${DIR_OWNER}:@x@-o ${x}@} \
-		${INST_GROUP:[1]:U${DIR_GROUP}:@x@-g ${x}@} \
+	${INSTALL} -d ${$@_MODE:[1]:U${DIR_MODE}:@x@-m ${x}@} \
+		${$@_OWNER:[1]:U${DIR_OWNER}:@x@-o ${x}@} \
+		${$@_GROUP:[1]:U${DIR_GROUP}:@x@-g ${x}@} \
 		$@ > /dev/null
 
 # The only default subdir. Everything else is added only for root and only
@@ -153,14 +153,20 @@ THIS:=	${DIRSPEC:[1]}
 .		endif
 .	endfor
 _ZEST_SEEN_DIRS:=	${_ZEST_SEEN_DIRS} ${THIS}
-DIR_INST:=	${DIRSPEC:[2]:C|:| |g}
+DIR_ARGS:=	${DIRSPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
+.	if ${DIR_ARGS:[1]:N_}
+${THIS}_MODE:=	${DIR_ARGS:[1]}
+.	endif
+.	if ${DIR_ARGS:[2]:N_}
+${THIS}_OWNER:=	${DIR_ARGS:[2]}
+.	endif
+.	if ${DIR_ARGS:[3]:N_}
+${THIS}_GROUP:=	if ${DIR_ARGS:[3]}
+.	endif
 TARGET_DIRS:=	${TARGET_DIRS} ${THIS}
-${THIS}: INST_MODE=${DIR_INST:[1]} ${DIR_MODE}
-${THIS}: INST_OWNER=${DIR_INST:[2]} ${DIR_OWNER}
-${THIS}: INST_GROUP=${DIR_INST:[3]} ${DIR_GROUP}
 ${THIS}: _make_dir
 .endfor
-.undef _ZEST_SEEN_DIRS THIS DIRSPEC
+.undef _ZEST_SEEN_DIRS THIS DIRSPEC DIR_ARGS
 
 .PHONY: ${TARGETS}
 .MAIN: ${TARGETS} ${TARGET_DIRS}
