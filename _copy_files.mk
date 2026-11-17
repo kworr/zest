@@ -25,15 +25,11 @@ MYFILE:=	${FILE_SPEC:[1]}
 # resolve file attrs (mode:owner:group), empty/omitted fields inherit defaults
 FILE_ARGS:= ${FILE_SPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
 THIS:=	${MYDEST}/${MYFILE}
-.	if ${FILE_ARGS:[1]:N_}
-${THIS}_MODE:=	${FILE_ARGS:[1]}
-.	endif
-.	if ${FILE_ARGS:[2]:N_}
-${THIS}_OWNER:=	${FILE_ARGS:[2]}
-.	endif
-.	if ${FILE_ARGS:[3]:N_}
-${THIS}_GROUP:=	${FILE_ARGS:[3]}
-.	endif
+.	for ATTR INDEX in MODE 1 OWNER 2 GROUP 3
+.		if ${FILE_ARGS:[${INDEX}]:N_}
+${THIS}_${ATTR}:=	${FILE_ARGS:[${INDEX}]}
+.		endif
+.	endfor
 
 ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
 .	for TAG in ${MYTAGS}

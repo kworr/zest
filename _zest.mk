@@ -36,8 +36,7 @@ TARGETS:=
 _mark_command: .USE
 	touch $@
 
-# Attr-aware helpers. Extra source token ZFLAGS="..." (pre-resolved install flags)
-# may be provided by generated rules; defaults preserve current behavior.
+# Installation helpers use destination-specific attributes with global defaults.
 # Accept global variables: $@_MODE, $@_OWNER, $@_GROUP
 _text_file: .USEBEFORE ${LAST_UPDATE}
 	if [ -f $@ ]; then \
@@ -142,31 +141,25 @@ INCLUDED+=	${MOD}
 
 # Global NEW_DIRS processing (after module aggregation): create each declared
 # directory once with resolved attrs. Duplicates (same dir path) are errors.
-_ZEST_SEEN_DIRS:=
 TARGET_DIRS:=
 .for DSPEC in ${NEW_DIRS:O:u} # if dir reqirements match we are ok with that
 DIRSPEC:=	${DSPEC:C|=| |}
 THIS:=	${DIRSPEC:[1]}
-.	for MDIR in ${_ZEST_SEEN_DIRS:M${THIS}}
+.	for MDIR in ${TARGET_DIRS:M${THIS}}
 .		if ${MDIR} == ${THIS}
 .			error "duplicate dir ${THIS} (${NEW_DIRS})"
 .		endif
 .	endfor
-_ZEST_SEEN_DIRS:=	${_ZEST_SEEN_DIRS} ${THIS}
 DIR_ARGS:=	${DIRSPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
-.	if ${DIR_ARGS:[1]:N_}
-${THIS}_MODE:=	${DIR_ARGS:[1]}
-.	endif
-.	if ${DIR_ARGS:[2]:N_}
-${THIS}_OWNER:=	${DIR_ARGS:[2]}
-.	endif
-.	if ${DIR_ARGS:[3]:N_}
-${THIS}_GROUP:=	${DIR_ARGS:[3]}
-.	endif
+.	for ATTR INDEX in MODE 1 OWNER 2 GROUP 3
+.		if ${DIR_ARGS:[${INDEX}]:N_}
+${THIS}_${ATTR}:=	${DIR_ARGS:[${INDEX}]}
+.		endif
+.	endfor
 TARGET_DIRS:=	${TARGET_DIRS} ${THIS}
 ${THIS}: _make_dir
 .endfor
-.undef _ZEST_SEEN_DIRS THIS DIRSPEC DIR_ARGS
+.undef THIS DIRSPEC DIR_ARGS
 
 .PHONY: ${TARGETS}
 .MAIN: ${TARGETS} ${TARGET_DIRS}
