@@ -12,8 +12,8 @@
 .error MOD unset, need to know module
 .endif
 
-.for FILE_SPEC in ${FILES}
-FILE_SPEC:=	${FILE_SPEC:C|=| |}
+.for FSPEC in ${FILES}
+FILE_SPEC:=	${FSPEC:C|=| |}
 .	if empty(DEST)
 MYDEST:=	${FILE_SPEC:[1]:H}
 MYFILE:=	${FILE_SPEC:[1]:T}
@@ -22,7 +22,7 @@ MYDEST:=	${DEST}
 MYFILE:=	${FILE_SPEC:[1]}
 .	endif
 # resolve file attrs (mode:owner:group), empty/omitted fields inherit defaults
-FILE_ARGS:=	${FILE_SPEC:[2]:C|:| |}
+FILE_ARGS:=	${FILE_SPEC:[2]:C|:| |g}
 
 ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
 .	for TAG in ${MYTAGS}

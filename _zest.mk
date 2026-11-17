@@ -5,7 +5,7 @@ ZEST:=	${.PARSEDIR}
 
 # this for temporary files (and converting service restarts to tasks)
 MAKEOBJDIR:=	${.CURDIR}/obj.${USER}
-.if !exist(${MAKEOBJDIR})
+.if !exists(${MAKEOBJDIR})
 _MAKEOBJDIR!=	mkdir -p ${MAKEOBJDIR}
 .endif
 .undef _MAKEOBJDIR
@@ -45,9 +45,9 @@ _text_file: .USEBEFORE ${LAST_UPDATE}
 	else \
 		echo '# new file $@'; \
 	fi; \
-	${INSTALL} ${INST_MODE:[1]:@x@-m ${x}@} \
-		${INST_OWNER:[1]:@x@-o ${x}@} \
-		${INST_GROUP:[1]:@x@-g ${x}@} \
+	${INSTALL} ${INST_MODE:[1]:U${FILE_MODE}:@x@-m ${x}@} \
+		${INST_OWNER:[1]:U${FILE_OWNER}:@x@-o ${x}@} \
+		${INST_GROUP:[1]:U${FILE_GROUP}:@x@-g ${x}@} \
 		${>:[1]} $@
 
 _link_file: .USEBEFORE ${LAST_UPDATE}
@@ -55,15 +55,17 @@ _link_file: .USEBEFORE ${LAST_UPDATE}
 		ls -la $@; \
 	else \
 		echo '# new link $@'; \
-	fi
+	fi; \
 	${INSTALL} -lsa ${>:[1]} $@
 
-_make_dir: .USEBEFORE
-	echo "# new dir $@"; \
-	${INSTALL} -d -m ${INST_MODE:[1]} \
-		${INST_OWNER:[1]@x@-o ${x}@} \
-		${INST_GROUP:[1]@x@-g ${x}@} \
-		$@
+_make_dir: .USEBEFORE ${LAST_UPDATE}
+	if [ ! -d $@ ]; then \
+		echo "# new dir $@"; \
+	fi; \
+	${INSTALL} -d ${INST_MODE:[1]:U${DIR_MODE}:@x@-m ${x}@} \
+		${INST_OWNER:[1]:U${DIR_OWNER}:@x@-o ${x}@} \
+		${INST_GROUP:[1]:U${DIR_GROUP}:@x@-g ${x}@} \
+		$@ > /dev/null
 
 # The only default subdir. Everything else is added only for root and only
 # through other config files
@@ -141,19 +143,22 @@ INCLUDED+=	${MOD}
 # Global NEW_DIRS processing (after module aggregation): create each declared
 # directory once with resolved attrs. Duplicates (same dir path) are errors.
 _ZEST_SEEN_DIRS:=
-.for DIRSPEC in ${NEW_DIRS:O:u} # if dir reqirements match we are ok with that
-.	if !empty(_ZEST_SEEN_DIRS:M${DIRSPEC})
-.		error "duplicate dir ${DIRSPEC} (NEW_DIRS)"
-.	endif
-_ZEST_SEEN_DIRS+=	${DIRSPEC}
-DIRSPEC:=	${DIRSPEC:C|=| |}
+TARGET_DIRS:=
+.for DSPEC in ${NEW_DIRS:O:u} # if dir reqirements match we are ok with that
+DIRSPEC:=	${DSPEC:C|=| |}
 THIS:=	${DIRSPEC:[1]}
-DIR_INST:=	${DIRSPEC:[2]:C|:| |}
+.	for MDIR in ${_ZEST_SEEN_DIRS:M${THIS}}
+.		if ${MDIR} == ${THIS}
+.			error "duplicate dir ${THIS} (${NEW_DIRS})"
+.		endif
+.	endfor
+_ZEST_SEEN_DIRS:=	${_ZEST_SEEN_DIRS} ${THIS}
+DIR_INST:=	${DIRSPEC:[2]:C|:| |g}
+TARGET_DIRS:=	${TARGET_DIRS} ${THIS}
 ${THIS}: INST_MODE=${DIR_INST:[1]} ${DIR_MODE}
 ${THIS}: INST_OWNER=${DIR_INST:[2]} ${DIR_OWNER}
 ${THIS}: INST_GROUP=${DIR_INST:[3]} ${DIR_GROUP}
 ${THIS}: _make_dir
-TARGET_DIRS+=	${THIS}
 .endfor
 .undef _ZEST_SEEN_DIRS THIS DIRSPEC
 
