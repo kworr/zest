@@ -25,6 +25,9 @@ MYFILE:=	${FILE_SPEC:[1]}
 # resolve file attrs (mode:owner:group), empty/omitted fields inherit defaults
 FILE_ARGS:= ${FILE_SPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
 THIS:=	${MYDEST}/${MYFILE}
+.	if defined(${THIS}_MODE) || defined(${THIS}_OWNER) || defined(${THIS}_GROUP)
+.		error 'File [${THIS}] is already installed and managed, possibly by other module.'
+.	endif
 .	if ${FILE_ARGS:[1]:N_}
 ${THIS}_MODE:=	${FILE_ARGS:[1]}
 .	endif

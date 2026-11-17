@@ -309,8 +309,12 @@ works cleanly — this scheme exists to avoid the
 `INST_MODE` idiom. Consequences:
 
 - The globals are set at parse time and live for the whole run (never
-  `.undef`ed); two files mapping to the same destination with different
-  attrs silently use the last parsed one.
+  `.undef`ed). They double as a duplicate-destination guard: a
+  second spec for a destination whose globals already exist
+  hard-errors at parse time ("File [...] is already installed
+  and managed, possibly by other module.") — see
+  [Known issues and design traps](#known-issues-and-design-traps)
+  for the plain-first gap.
 - Path characters (`/`, `.`, `-`) are legal in bmake variable names, so
   destination paths work as prefixes.
 - The `:N_` guard (`.if ${FILE_ARGS:[1]:N_}`) evaluates the field with
@@ -844,10 +848,21 @@ re-read the files. These are behaviours to design around, not a bug list.
    Note `user.mk` lists its files but not the parents of `USER_FILES` on
    the `user` target, so `make user` assumes those parents exist (or are
    reached via `USER_DIRS`).
-4. **Attribute globals are not cleaned up.** `${PATH}_MODE`/`_OWNER`/
-   `_GROUP` are defined at parse time, never `.undef`ed, and live for the
-   whole run. If two declarations install to the same destination with
-   different attrs, the last one parsed wins silently.
+4. **Duplicate file destinations error, unless the first spec is attr-less.**
+   Before defining an attr global, the pass errors if one is
+   already defined ("File [...] is already installed and
+   managed, possibly by other module.") — the file analogue of
+   `NEW_DIRS`' duplicate-dir error. The guard only sees what the
+   *first* spec left behind: first spec with ≥1 attr field → any
+   second spec for the same destination errors (attr or plain).
+   A first spec without attr fields (plain, or all-empty `:::`)
+   defines no globals, so the duplicate is not detected and the
+   specs merge per field: the second spec's attrs apply, a
+   conflicting field resolves to the last spec parsed, and the
+   recipe still runs once (bmake merges the duplicate dep lines).
+   Verified: `dup.conf=600` + `dup.conf=:root:wheel` and
+   `dup.conf=600` + `dup.conf` error; `dup.conf` +
+   `dup.conf=640` and plain + plain do not.
 5. **The `_` sentinel collision.** Empty fields are represented by `_`;
    a literal value of exactly `_` (e.g. an owner named `_`) is
    indistinguishable and would be dropped.
