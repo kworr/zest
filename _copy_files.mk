@@ -28,15 +28,11 @@ THIS:=	${MYDEST}/${MYFILE}
 .	if defined(${THIS}_MODE) || defined(${THIS}_OWNER) || defined(${THIS}_GROUP)
 .		error 'File [${THIS}] is already installed and managed, possibly by other module.'
 .	endif
-.	if ${FILE_ARGS:[1]:N_}
-${THIS}_MODE:=	${FILE_ARGS:[1]}
-.	endif
-.	if ${FILE_ARGS:[2]:N_}
-${THIS}_OWNER:=	${FILE_ARGS:[2]}
-.	endif
-.	if ${FILE_ARGS:[3]:N_}
-${THIS}_GROUP:=	${FILE_ARGS:[3]}
-.	endif
+.	for A I in MODE 1 OWNER 2 GROUP 3 # Attribute, Index
+.		if ${FILE_ARGS:[$I]:N_}
+${THIS}_$A:=	${FILE_ARGS:[$I]}
+.		endif
+.	endfor
 
 ITEM_LIST:=	${.CURDIR}/${MOD}/${MYHOST}/${MYFILE}
 .	for TAG in ${MYTAGS}

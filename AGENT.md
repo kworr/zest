@@ -11,7 +11,7 @@ behaviours it relies on, and the traps found while adding per-file and
 per-directory `mode:owner:group` support.
 
 - Verified on FreeBSD, `MAKE_VERSION 20251111`, against Fossil checkout
-  `6e5c13a3` (2026-11-17). Line numbers will drift; re-read the files
+  `e59d594f` (2026-11-17). Line numbers will drift; re-read the files
   before trusting them.
 - Requires BSD make semantics. It is **not** GNU make compatible (uses
   `!=` instead of `$(shell)`, plus `.MAIN`, `.ORDER`, `:U`, `.for` text
@@ -317,8 +317,8 @@ works cleanly — this scheme exists to avoid the
   for the plain-first gap.
 - Path characters (`/`, `.`, `-`) are legal in bmake variable names, so
   destination paths work as prefixes.
-- The `:N_` guard (`.if ${FILE_ARGS:[1]:N_}`) evaluates the field with
-  underscores stripped: real values are non-empty → defined; the
+- The `:N_` guard (`.if ${FILE_ARGS:[$I]:N_}`, `$I` cycles 1–3) filters
+  out the `_` sentinel: real values stay non-empty → defined; the
   sentinel `_` and absent fields are empty → not defined.
 
 The macro can be included more than once per module (e.g.
@@ -385,7 +385,7 @@ What the pass does (`_zest.mk`):
     TARGET_DIRS:= ${TARGET_DIRS} ${THIS}    # immediate, not +=
     ${THIS}: _make_dir
 .endfor
-.undef _ZEST_SEEN_DIRS THIS DIRSPEC DIR_ARGS
+.undef THIS DIRSPEC DIR_ARGS
 ```
 
 and `.MAIN: ${TARGETS} ${TARGET_DIRS}`. Every declared directory is a
@@ -826,7 +826,7 @@ commands inherited from `.USE`/`.USEBEFORE` sources.
 
 ## Known issues and design traps
 
-Current checkout: `6e5c13a3` (2026-11-17). Line numbers will drift;
+Current checkout: `e59d594f` (2026-11-17). Line numbers will drift;
 re-read the files. These are behaviours to design around, not a bug list.
 
 1. **Directory attrs are re-applied every run.** `_make_dir` inherits
@@ -866,9 +866,8 @@ re-read the files. These are behaviours to design around, not a bug list.
 5. **The `_` sentinel collision.** Empty fields are represented by `_`;
    a literal value of exactly `_` (e.g. an owner named `_`) is
    indistinguishable and would be dropped.
-6. **Stale `ZFLAGS` comment.** `_text_file`'s header comment still
-   mentions an "Extra source token ZFLAGS" that no mechanism implements.
-   Also `_text_file` uses `${$@_MODE:U…}` while the other attr lines use
+6. **Inconsistent `:U` modifiers.** `_text_file`'s mode line uses
+   `${$@_MODE:U…}` while its owner/group lines (and `_make_dir`'s) use
    `:[1]:U…` — harmless for single-word values, but inconsistent.
 7. **Directory attrs need privilege.** The directory rule is forced, but
    on non-root FreeBSD runs `INSTALL` includes `-U`, which skips chown
