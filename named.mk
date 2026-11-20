@@ -5,6 +5,7 @@ NAMED_ZONES+=	empty localhost-reverse localhost-forward bind
 NAMED_CONFIGS+=	named logging acls ads generic local master
 
 STALE_FILES+=	/etc/newsyslog.conf.d/named.conf
+NEW_DIRS+=	${NAMED_ETC} ${NAMED_ETC}/master
 
 named: /var/log/named clean_stale ${SERVICE_NAMED} \
 	${NAMED_ETC}/master
@@ -15,8 +16,6 @@ ${SERVICE_NAMED}: \
 
 _named_reload: .USE
 	rndc reload
-
-${NAMED_ETC}/master: _make_dir
 
 FILES:=	${NAMED_CONFIGS:%=%.conf}
 DEST:=	${NAMED_ETC}

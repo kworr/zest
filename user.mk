@@ -31,8 +31,8 @@ USER_FILES+=	${HOME}/.cshrc
 # icons (mouse cursor)
 USER_LINKS+=	${HOME}/.icons/default
 USER_DIRS+=	${HOME}/.icons
+NEW_DIRS+=	${HOME}/.icons
 
-${HOME}/.icons: _make_dir
 ${HOME}/.icons/default: /usr/local/share/icons/Ardoise_shadow_75 _link_file
 .ORDER: ${HOME}/.icons ${HOME}/.icons/default
 .endif
@@ -48,6 +48,7 @@ USER_FILES+=	${HOME}/.Xdefaults \
 	${HOME}/.xinitrc
 .endif
 
+NEW_DIRS+=	${USER_FILES:H:O:u}
 FILES:=	${USER_FILES}
 .include "${ZEST}/_copy_files.mk"
 

@@ -2,6 +2,8 @@ POSTFIX_ETC?=	/usr/local/etc/postfix
 
 POSTFIX_CONFIGS+=	access aliases header_checks main.cf master.cf
 
+NEW_DIRS+=	${POSTFIX_ETC}
+
 postfix: ${SERVICE_POSTFIX} ${POSTFIX_ETC}
 
 ${SERVICE_POSTFIX}: ${.OBJDIR}/postfix_rehashed

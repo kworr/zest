@@ -1,18 +1,24 @@
 # define where Zest is located
 ZEST:=	${.PARSEDIR}
 
+.include "_config.mk"
+
 # this for temporary files (and converting service restarts to tasks)
-.OBJDIR: ${.CURDIR}/obj.${USER}
+MAKEOBJDIR:=	${.CURDIR}/obj.${USER}
+.if !exists(${MAKEOBJDIR})
+_MAKEOBJDIR!=	mkdir -p ${MAKEOBJDIR}
+.endif
+.undef _MAKEOBJDIR
+.OBJDIR: ${MAKEOBJDIR}
 
 # This one ensures files will be overwritten even if local configuration is newer
 LAST_UPDATE:=	${.OBJDIR}/last.update
-${LAST_UPDATE}! ${.OBJDIR}
+${LAST_UPDATE}!
 	touch $@
 
 .SILENT:
 TARGETS:=
 
-.include "_config.mk"
 .sinclude "${.CURDIR}/_config.mk"
 
 .if !empty(MYHOST:C|[a-zA-Z0-9-]*||)
@@ -30,45 +36,49 @@ TARGETS:=
 _mark_command: .USE
 	touch $@
 
+# Installation helpers use destination-specific attributes with global defaults.
+# Accept global variables: $@_MODE, $@_OWNER, $@_GROUP
 _text_file: .USEBEFORE ${LAST_UPDATE}
 	if [ -f $@ ]; then \
 		diff -u $@ ${>:[1]} || true; \
 	else \
 		echo '# new file $@'; \
-	fi
-	${INSTALL} ${>:[1]} $@
+	fi; \
+	${INSTALL} ${$@_MODE:U${FILE_MODE}:@x@-m ${x}@} \
+		${$@_OWNER:[1]:U${FILE_OWNER}:@x@-o ${x}@} \
+		${$@_GROUP:[1]:U${FILE_GROUP}:@x@-g ${x}@} \
+		${>:[1]} $@
 
 _link_file: .USEBEFORE ${LAST_UPDATE}
 	if [ -f $@ ]; then \
 		ls -la $@; \
 	else \
 		echo '# new link $@'; \
-	fi
+	fi; \
 	${INSTALL} -lsa ${>:[1]} $@
 
-_make_dir: .USEBEFORE
-	echo '# new dir $@'; \
-	${INSTALL_DIR} $@
-
-.for DIR in ${NEWSYSLOG_DIR} ${SYSLOG_DIR} ${.OBJDIR}
-.	if !exists(${DIR})
-${DIR}: _make_dir
-TARGETS+=	${DIR}
-.	endif
-.endfor
+_make_dir: .USEBEFORE ${LAST_UPDATE}
+	if [ ! -d $@ ]; then \
+		echo "# new dir $@"; \
+	fi; \
+	${INSTALL} -d ${$@_MODE:[1]:U${DIR_MODE}:@x@-m ${x}@} \
+		${$@_OWNER:[1]:U${DIR_OWNER}:@x@-o ${x}@} \
+		${$@_GROUP:[1]:U${DIR_GROUP}:@x@-g ${x}@} \
+		$@ > /dev/null
 
 # The only default subdir. Everything else is added only for root and only
 # through other config files
 .if !empty(.TARGETS)
-SUBDIR:=	${.TARGETS}
+SUBDIR+=	${.TARGETS}
 .else
-SUBDIR:=	user
+SUBDIR+=	user
 .endif
 
 #### Global configuration
 # for `root` - add default modules and then include host config
 # also we are populating ${MYTAGS}
 .if empty(USER:Nroot) && empty(.TARGETS)
+NEW_DIRS+=	${NEWSYSLOG_DIR} ${SYSLOG_DIR}
 .	include "${.CURDIR}/_default.mk"
 .		for TAGLINE in ${TAGS}
 THIS_HOST:=	${TAGLINE:C|.*=||:S|,| |g:M${MYHOST}}
@@ -129,8 +139,30 @@ INCLUDED+=	${MOD}
 .	endif
 .endfor
 
+# Global NEW_DIRS processing (after module aggregation): create each declared
+# directory once with resolved attrs. Duplicates (same dir path) are errors.
+TARGET_DIRS:=
+.for DSPEC in ${NEW_DIRS:O:u} # if dir reqirements match we are ok with that
+DIRSPEC:=	${DSPEC:C|=| |}
+THIS:=	${DIRSPEC:[1]}
+.	for MDIR in ${TARGET_DIRS:M${THIS}}
+.		if ${MDIR} == ${THIS}
+.			error "duplicate dir ${THIS} (${NEW_DIRS})"
+.		endif
+.	endfor
+DIR_ARGS:=	${DIRSPEC:[2]:S|^:|_:|:S|::|:_:|g:S|::|:_:|g:C|:| |g}
+.	for A I in MODE 1 OWNER 2 GROUP 3 # Attribute, Index
+.		if ${DIR_ARGS:[$I]:N_}
+${THIS}_$A:=	${DIR_ARGS:[$I]}
+.		endif
+.	endfor
+TARGET_DIRS:=	${TARGET_DIRS} ${THIS}
+${THIS}: _make_dir
+.endfor
+.undef THIS DIRSPEC DIR_ARGS
+
 .PHONY: ${TARGETS}
-.MAIN: ${TARGETS}
+.MAIN: ${TARGETS} ${TARGET_DIRS}
 
 clean_stale: clean_files clean_dirs
 

@@ -5,6 +5,7 @@ NGINX_SITES?=
 NGINX_CONFIGS+=	le_webroot nginx ssl local
 NGINX_MAINT?=
 NGINX_DIRS:= /var/ca ${NGINX_ETC}/local ${NGINX_ETC}/maintenance
+NEW_DIRS+=	${NGINX_ETC} ${NGINX_DIRS}
 
 nginx: ${SERVICE_NGINX} clean_stale
 
@@ -18,10 +19,6 @@ ${SERVICE_NGINX}: \
 _nginx_reload: .USE
 	nginx -t && nginx -s reload
 
-.for DIR in ${NGINX_DIRS}
-${DIR}: _make_dir
-.endfor
-
 FILES:=	${NGINX_CONFIGS:%=%.conf}
 DEST:=	${NGINX_ETC}
 .include "${ZEST}/_copy_files.mk"
@@ -33,8 +30,8 @@ ${NGINX_ETC}/local/${SITE}.conf: nginx/site/${SITE}.conf _text_file
 .endfor
 
 .for PAGE in ${NGINX_MAINT}
-${NGINX_ETC}/maintenance/${PAGE}.html: nginx/${PAGE}.html ${NGINX_ETC}/maintenance _text_file
-.ORDER: ${NGINX_ETC}/maintenance ${NGINX_ETC}/maintenance/${PAGE}.conf
+${NGINX_ETC}/maintenance/${PAGE}.html: nginx/${PAGE}.html _text_file
+.ORDER: ${NGINX_ETC}/maintenance ${NGINX_ETC}/maintenance/${PAGE}.html
 .endfor
 
 STALE_FILES+= ${INSTALLED:C|^.+$|${NGINX_ETC}/local/&.conf|g}

@@ -35,6 +35,7 @@ ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}: ${SERVICE_FILES} _mark_command
 .	endfor
 .ORDER: ${.OBJDIR}/systemd.reloaded ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}
 .	if !empty(SYSTEMD_FILES)
+NEW_DIRS+=	${SYSTEMD_FILES:H:O:u}
 FILES:=	${SYSTEMD_FILES}
 MOD:=	${SERVICE_MODULE}
 .		include "${ZEST}/_copy_files.mk"
@@ -44,6 +45,5 @@ MOD:=	${SERVICE_MODULE}
 # reloading systemctl if any files were changed
 ${.OBJDIR}/systemd.reloaded: ${SYSTEMD_FILES} _mark_command
 	systemctl daemon-reload
-.ORDER: ${.OBJDIR} ${.OBJDIR}/systemd.reloaded
 
 systemd: ${.OBJDIR}/systemd.reloaded
