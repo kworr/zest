@@ -36,11 +36,11 @@ SERVICE_MODULE:=	${SERVICE_DEPS:[1]}
 # if we had = everything after that is comma separated list of files
 SERVICE_FILES:=	${SERVICE_DEPS:[2]:S|,| |g}
 # adding those to global list (for reload and copying)
-SYSTEMD_FILES+=	${SERVICE_FILES}
+SYSTEMD_FILES:=	${SYSTEMD_FILES} ${SERVICE_FILES}
 .			endif
 .ORDER: ${.OBJDIR}/systemd.reloaded ${SYSTEMD_SERVICE_${SERVICE_NAME:tu}}
 .			if !empty(SERVICE_FILES)
-NEW_DIRS+=	${SERVICE_FILES:H:O:u}
+NEW_DIRS:=	${NEW_DIRS} ${SERVICE_FILES:H:O:u}
 FILES:=	${SERVICE_FILES}
 MOD:=	${SERVICE_MODULE}
 .				include "${ZEST}/_copy_files.mk"
