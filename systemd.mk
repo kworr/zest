@@ -26,7 +26,8 @@ SERVICE_NAME:=	${SERVICE_DEF:[1]}
 # everything else are systemctl commands
 SERVICE_CMDS:=	${SERVICE_DEF:[2..-1]}
 SERVICE_FILES:=
-${LIST:C|ES|E|}_${SERVICE_NAME:tu}=	${.OBJDIR}/${SERVICE_NAME}.systemd${${LIST}_POSTFIX_${SERVICE:C|:.*||:tu}}
+# precreating postfix, so we can insert it into service flag name
+${LIST:C|ES|E|}_${SERVICE_NAME:tu}=	${.OBJDIR}/${SERVICE_NAME}.systemd${${LIST}_POSTFIX_${SERVICE_NAME:tu}}
 # if we have something after = that's files
 .		if ${LIST} == SYSTEMD_SERVICES
 .			if !empty(SERVICE_TUPLE:[2])
@@ -49,6 +50,8 @@ MOD:=	${SERVICE_MODULE}
 ${LIST}_POSTFIX_${SERVICE_NAME:tu}:=	.pre.${SERVICE_TUPLE:[2]}
 .ORDER: ${SYSTEMD_SERVICE_PRE_${SERVICE_NAME:tu}} ${.OBJDIR}/systemd.reloaded
 .		endif
+# materializing service name, so that other services can depend on it
+${LIST:C|ES|E|}_${SERVICE_NAME:tu}:=	${${LIST:C|ES|E|}_${SERVICE_NAME:tu}}
 # and creating a class for each service, it's up module to properly integrate
 # that class with other configuration files
 ${${LIST:C|ES|E|}_${SERVICE_NAME:tu}}: ${SERVICE_FILES} _mark_command
