@@ -90,7 +90,7 @@ per-directory `mode:owner:group` support.
 | `_config.mk` | Defaults (`FILE_MODE`, `DIR_MODE`, `INSTALL`), OS/user detection |
 | `_copy_files.mk` | Generates install rules from `FILES`/`DEST`/`MOD` |
 | `service.mk` | Turns `SERVICES` entries into service marker targets |
-| `systemd.mk` | Alternative systemd service handling (`SYSTEMD_SERVICES`) |
+| `systemd.mk` | Alternative systemd service handling (`SYSTEMD_SERVICES`, `SYSTEMD_SERVICES_PRE`) |
 | `<module>.mk` | Built-in module implementation |
 | `<module>.var.mk` | Cross-module declarations (services, shared file lists) |
 | `README.md` | User-facing docs (module list, selectors, extending) |
@@ -236,6 +236,7 @@ module implementation.
 | `NEW_DIRS` | Directory declarations, `path[=mode[:owner[:group]]]` |
 | `SERVICES` | `<name>:<cmd>[:<cmd>...]` service declarations |
 | `SYSTEMD_SERVICES` | systemd tuple syntax (see `systemd.mk`) |
+| `SYSTEMD_SERVICES_PRE` | systemd pre-reload tuple syntax (see `systemd.mk`) |
 | `STALE_FILES` / `STALE_DIRS` | Obsolete paths removed by `clean_stale` |
 | `NEWSYSLOG_FILES` / `NEWSYSLOG_DIR` | Cross-module newsyslog inputs / destination |
 | `SYSLOG_FILES` / `SYSLOG_DIR` | Cross-module syslog inputs / destination |
@@ -493,12 +494,51 @@ retry-on-failure matters.
 `systemd.mk` is a second, tuple-based mechanism:
 
 ```
-SYSTEMD_SERVICES+= name:restart=module:/etc/systemd/system/x.service,/other/file
+SYSTEMD_SERVICES+=      name:restart=module:/etc/systemd/system/x.service,/other/file
+SYSTEMD_SERVICES_PRE+=  name:stop=version
 ```
 
-It sets `MOD` to the named module so `_copy_files.mk` can install files
-owned by another module, and uses `${.OBJDIR}/systemd.reloaded` to run
-`systemctl daemon-reload` once.
+Both lists are processed by the same `.for` loop and distinguished by
+`${LIST}`:
+
+- `SYSTEMD_SERVICES` (POST): the value after `=` is `module:file,...`.
+  Files go through `_copy_files.mk` with `MOD` set to the named module;
+  the marker is `${.OBJDIR}/<name>.systemd` and the commands run after
+  `systemctl daemon-reload`.
+- `SYSTEMD_SERVICES_PRE`: the value after `=` is a version token, not a
+  file list. The marker is `${.OBJDIR}/<name>.systemd.pre.<version>`, so
+  bumping the version forces the command to run again; the commands run
+  before the reload, against the units that are currently active. A
+  missing version yields a marker ending in `.pre.` (trailing dot).
+
+The names exported for consumers are `SYSTEMD_SERVICE_<NAME>` and
+`SYSTEMD_SERVICE_PRE_<NAME>`; the loop derives them from `${LIST}` with
+`:C|ES|E|` (strips the plural `S`) plus `:tu`. Ordering uses `.ORDER`,
+which bmake honours only under `-j`:
+
+```
+.ORDER: ${SYSTEMD_SERVICE_PRE_<name>} ${.OBJDIR}/systemd.reloaded
+.ORDER: ${.OBJDIR}/systemd.reloaded ${SYSTEMD_SERVICE_<name>}
+```
+
+It takes effect only when `${.OBJDIR}/systemd.reloaded` is in the graph
+(pulled in by the `systemd` target).
+
+The marker path is assigned lazily (`=`) because it must read
+`${LIST}_POSTFIX_<NAME>`, which is set only in the PRE branch, further
+down the loop body. A lazy value that references `SERVICE_NAME` is
+re-expanded at use time, after the loop, when that global holds the
+**last** service. Freeze it per iteration with a nested self-assignment:
+
+```
+${LIST:C|ES|E|}_${SERVICE_NAME:tu}:=	${${LIST:C|ES|E|}_${SERVICE_NAME:tu}}
+```
+
+The outer `${...}` builds the variable name; the inner `${...}` is the
+value reference. Without the inner braces the variable is assigned its
+own name as a literal string, and every consumer gets a bogus target.
+See [.for is textual substitution](#for-is-textual-substitution) and
+[Deferred `+=` is not expanded](#deferred--is-not-expanded).
 
 ## Install semantics and mtime
 

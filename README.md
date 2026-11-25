@@ -248,11 +248,32 @@ The marker's mtime suppresses repeat restarts. The plain `service ...`
 commands run before the marker is touched, so a failed command is retried;
 `_`-macros run after the marker, so keep them idempotent.
 
+### systemd services (Linux)
+
 `systemd.mk` provides a tuple-based alternative for Linux:
 
 ```
-SYSTEMD_SERVICES+= name:restart=module:/etc/systemd/system/x.service,/other/file
+SYSTEMD_SERVICES+=      name:restart=module:/etc/systemd/system/x.service,/other/file
+SYSTEMD_SERVICES_PRE+=  name:stop=1
 ```
+
+- The name before the first `:` is passed to `systemctl`.
+- `SYSTEMD_SERVICES` commands run after `systemctl daemon-reload`. The value
+  after `=` is `module:/path/file,...`; those files are installed through
+  `_copy_files.mk`, with `MOD` set to the named module.
+- `SYSTEMD_SERVICES_PRE` commands run before the reload, against the units
+  that are currently active. The value after `=` is a version token, not a
+  file list.
+- The declarations create `SYSTEMD_SERVICE_<NAME>` and
+  `SYSTEMD_SERVICE_PRE_<NAME>` (uppercase), expanding to
+  `${.OBJDIR}/<name>.systemd` and `${.OBJDIR}/<name>.systemd.pre.<version>`.
+  List them on the module target as with `SERVICE_<NAME>`.
+- The version is part of the marker name, so change it to force the PRE
+  command to run again. A PRE entry without a version produces a marker
+  ending in `.pre.` (empty suffix).
+- The order PRE → `daemon-reload` → POST is enforced with `.ORDER`, so it
+  applies only under `-j`, and only when `${.OBJDIR}/systemd.reloaded` is in
+  the graph (i.e. something depends on `systemd`).
 
 ## Module types
 
